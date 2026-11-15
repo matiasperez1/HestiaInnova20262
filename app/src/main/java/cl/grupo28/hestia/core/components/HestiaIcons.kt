@@ -13,8 +13,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.unit.dp
-import cl.grupo28.hestia.core.theme.Amber
-import cl.grupo28.hestia.core.theme.DeepBlue
+
 
 enum class HestiaSymbol(val path: String) {
     HOME("M3,10 L12,3 L21,10 M5,9 L5,21 L10,21 L10,14 L14,14 L14,21 L19,21 L19,9"),
@@ -52,19 +51,21 @@ fun HestiaIcon(symbol: HestiaSymbol, modifier: Modifier = Modifier, tint: Color 
 /** A small flame sheltered by a roof, drawn as a code-native vector. */
 @Composable
 fun HestiaMark(modifier: Modifier = Modifier, onDark: Boolean = false) {
+    val ink = MaterialTheme.colorScheme.onSurface
+    val accent = MaterialTheme.colorScheme.tertiary
     Canvas(modifier.size(52.dp)) {
         val unit = size.minDimension / 52f
         val roof = androidx.compose.ui.graphics.Path().apply {
             moveTo(7 * unit, 24 * unit); lineTo(26 * unit, 8 * unit); lineTo(45 * unit, 24 * unit)
             moveTo(12 * unit, 23 * unit); lineTo(12 * unit, 43 * unit); lineTo(40 * unit, 43 * unit); lineTo(40 * unit, 23 * unit)
         }
-        drawPath(roof, if (onDark) Color.White else DeepBlue, style = androidx.compose.ui.graphics.drawscope.Stroke(2.6f * unit, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawPath(roof, ink, style = androidx.compose.ui.graphics.drawscope.Stroke(2.6f * unit, cap = StrokeCap.Round, join = StrokeJoin.Round))
         val flame = androidx.compose.ui.graphics.Path().apply {
             moveTo(27 * unit, 19 * unit)
             cubicTo(28 * unit, 26 * unit, 35 * unit, 27 * unit, 33 * unit, 34 * unit)
             cubicTo(31 * unit, 41 * unit, 20 * unit, 39 * unit, 20 * unit, 33 * unit)
             cubicTo(19 * unit, 28 * unit, 25 * unit, 26 * unit, 27 * unit, 19 * unit)
         }
-        drawPath(flame, Amber)
+        drawPath(flame, accent)
     }
 }

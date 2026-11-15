@@ -16,10 +16,10 @@ fun EducationScreen(completed: Set<Int>, onLesson: (Int) -> Unit) {
         lessons.forEach { lesson ->
             Surface(onClick = { onLesson(lesson.id) }, shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surface) {
                 Row(Modifier.fillMaxWidth().heightIn(min = 88.dp).padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Text(lesson.id.toString().padStart(2, '0'), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.secondary)
+                    IconTile(lesson.symbol)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(lesson.title, style = MaterialTheme.typography.titleMedium)
-                        Text(if (lesson.id in completed) "Completada" else "Por aprender", style = MaterialTheme.typography.bodyMedium)
+                        Text(if (lesson.id in completed) "Completada" else "Toca para aprender", style = MaterialTheme.typography.bodyMedium)
                     }
                     HestiaIcon(if (lesson.id in completed) HestiaSymbol.CHECK else HestiaSymbol.ARROW)
                 }
@@ -61,7 +61,7 @@ fun LessonScreen(lesson: LessonUiModel, saving: Boolean, onComplete: () -> Unit,
             }
             if (answer != null) PrimaryButton(if (saving) "Guardando…" else if (lesson.id < 5) "Siguiente lección" else "Terminar", onComplete, enabled = !saving)
         }
-        Column {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Fuentes oficiales", style = MaterialTheme.typography.labelMedium)
             lesson.sources.forEach { source ->
                 TextButton({ onSource(source) }, Modifier.heightIn(min = 48.dp)) { Text(source.title) }

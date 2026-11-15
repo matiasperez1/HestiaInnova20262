@@ -12,7 +12,9 @@ Solo tres secciones principales: **Resumen, Aprender y Familia**. Resumen es el 
 
 Hestia representa protección, hogar, familia y tranquilidad: seguridad, confianza, cercanía, estabilidad y protección familiar. Inspiración mitológica sutil y contemporánea; símbolos abstractos de hogar, llama protegida, estructura arquitectónica o círculo. Sin diosas ni templos literales.
 
-Paleta: azul `#172B3A`, petróleo `#347C78`, marfil `#F5F1E8`, ámbar `#E9B95D`, coral `#C96C63`. Ajustar tonos para contraste adecuado.
+Sistema visual vigente ETAPA 1.2: fondo `#F7F2E9`, tarjetas `#FFF9F0`, texto `#24211F`, texto secundario `#514A44`, acciones terracota `#8A3F20`, acento ámbar `#D88A2D`, destacados `#F4DDB8`, positivo `#435A3B` sobre `#E7EBDD`, riesgo `#963B32` sobre `#F4DEDA`, bordes `#CFC2B2`. Usar MaterialTheme, sin colores dinámicos ni fondos blancos puros. Ámbar solo como acento, nunca texto pequeño sobre claro.
+
+Sans serif nativa: pantalla 28–32 sp, tarjetas 20–22 sp, cuerpo 18 sp, secundario 16 sp, botones 18 sp, navegación 16 sp y métricas 36 sp. Sin texto de 12 sp ni alturas que recorten fuentes ampliadas. Separar acciones independientes al menos 12 dp. Selección de pestañas mediante fondo y peso tipográfico, con etiquetas visibles. Sin datos reales mostrar «Sin datos». Ver [decisiones y límites](docs/DESIGN_DECISIONS.md).
 
 - Una acción principal por pantalla; reducir texto, opciones y tarjetas.
 - Preferir dos o tres líneas por explicación, sin cortar texto al ampliar fuentes.

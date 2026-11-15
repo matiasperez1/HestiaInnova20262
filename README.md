@@ -2,13 +2,13 @@
 
 Aplicación Android del Grupo 28 para adultos mayores: llamadas y correos sospechosos, resumen semanal y educación antifraude. Identidad: **Hestia**, `cl.grupo28.hestia`.
 
-## Experiencia actual — ETAPA 1.1
+## Experiencia actual — ETAPA 1.2
 
 Solo tres secciones: **Resumen, Aprender y Familia**. Configuración inicial de siete pasos, persistida con DataStore y reanudable. Tras finalizar el recorrido se abre Resumen en los siguientes inicios.
 
 Google/Supabase Auth, Gmail OAuth, identificación de llamadas y avisos siguen pendientes. Sus acciones aparecen no disponibles y el usuario puede continuar sin activarlas. Completar el asistente no concede permisos ni conecta protecciones. No se solicitan permisos Android en esta etapa.
 
-Resumen muestra la semana y campos sin datos («—»); no hay fuentes reales conectadas. Incluye un cálculo de dominio probado para eventos futuros, sin generar ni sincronizar eventos de demostración. El conteo futuro será de llamadas registradas por Hestia, no de todo el historial telefónico: la recepción de contactos requiere READ_CONTACTS y números privados/restringidos pueden quedar fuera. No se solicita READ_CALL_LOG.
+Resumen muestra la semana y campos sin datos («Sin datos»); no hay fuentes reales conectadas. Incluye un cálculo de dominio probado para eventos futuros, sin generar ni sincronizar eventos de demostración. El conteo futuro será de llamadas registradas por Hestia, no de todo el historial telefónico: la recepción de contactos requiere READ_CONTACTS y números privados/restringidos pueden quedar fuera. No se solicita READ_CALL_LOG.
 
 Familia guarda contactos de emergencia en el teléfono: entrada manual, iniciales, eliminación confirmada y apertura del marcador mediante ACTION_DIAL. No necesita permisos de agenda ni CALL_PHONE. No hay backend, invitaciones ni avisos a terceros. Aprender contiene cinco lecciones propias con preguntas, progreso local y enlaces de CMF, SERNAC, ChileAtiende y BCN.
 
@@ -40,6 +40,7 @@ APK: `app/build/outputs/apk/debug/app-debug.apk`. Instalar con `adb install -r` 
 
 ## Documentos y límites
 
+- [Diseño ETAPA 1.2](docs/DESIGN_DECISIONS.md): paleta, accesibilidad, investigación y límites.
 - AGENTS.md: reglas vigentes.
 - MVP_SPEC.md: alcance y aceptación actuales.
 - CODEX_PROMPTS.md: etapas futuras, sin autorización implícita para ejecutarlas.

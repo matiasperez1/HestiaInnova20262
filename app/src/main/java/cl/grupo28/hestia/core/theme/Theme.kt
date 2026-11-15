@@ -13,27 +13,32 @@ import androidx.compose.ui.unit.dp
 import cl.grupo28.hestia.core.accessibility.DisplayPreferences
 
 private val Colors = lightColorScheme(
-    primary = DeepBlue, onPrimary = Color.White,
-    primaryContainer = Color(0xFFE1EDEA), onPrimaryContainer = DeepBlue,
-    secondary = PetroleumInk, onSecondary = Color.White,
-    secondaryContainer = Color(0xFFDDEBE6), onSecondaryContainer = DeepBlue,
-    tertiary = Color(0xFF765413), onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFF8E6BE), onTertiaryContainer = Color(0xFF4B350B),
-    background = Ivory, onBackground = DeepBlue,
-    surface = Color(0xFFFFFCF6), onSurface = DeepBlue,
-    surfaceVariant = Color(0xFFECE8DE), onSurfaceVariant = Color(0xFF526068),
-    outline = Color(0xFF79827E), outlineVariant = Color(0xFFD9DCD4),
-    error = Color(0xFF963C35), onError = Color.White,
-    errorContainer = Color(0xFFF8E4DE), onErrorContainer = Color(0xFF6F2C26),
-    surfaceContainer = Color(0xFFFFFCF6),
+    primary = Action, onPrimary = CardSurface,
+    primaryContainer = Color(0xFFF4DDB8), onPrimaryContainer = Ink,
+    secondary = Positive, onSecondary = CardSurface,
+    secondaryContainer = Color(0xFFE7EBDD), onSecondaryContainer = Ink,
+    tertiary = Amber, onTertiary = Ink,
+    tertiaryContainer = Color(0xFFF4DDB8), onTertiaryContainer = Color(0xFF24211F),
+    background = Background, onBackground = Ink,
+    surface = Color(0xFFFFF9F0), onSurface = Ink,
+    surfaceVariant = Color(0xFFF4DDB8), onSurfaceVariant = Color(0xFF514A44),
+    outline = Color(0xFF514A44), outlineVariant = Color(0xFFCFC2B2),
+    error = Color(0xFF963B32), onError = CardSurface,
+    errorContainer = Color(0xFFF4DEDA), onErrorContainer = Color(0xFF963B32),
+    surfaceContainer = CardSurface,
+    surfaceContainerLowest = Background, surfaceContainerLow = CardSurface,
+    surfaceContainerHigh = CardSurface, surfaceContainerHighest = CardSurface,
+    surfaceBright = CardSurface, surfaceDim = Background, surfaceTint = Action,
+    inverseSurface = Ink, inverseOnSurface = CardSurface, inversePrimary = Color(0xFFF4DDB8),
+    scrim = Ink,
 )
 
 @Composable
 fun HestiaTheme(preferences: DisplayPreferences = DisplayPreferences(), content: @Composable () -> Unit) {
     val density = LocalDensity.current
     val colors = if (preferences.highContrast) Colors.copy(
-        onSurfaceVariant = DeepBlue, outline = DeepBlue, outlineVariant = DeepBlue,
-        secondary = Color(0xFF164C47), background = Color.White, surface = Color.White,
+        onSurfaceVariant = Ink, outline = Ink, outlineVariant = Ink,
+        secondary = Color(0xFF435A3B), background = CardSurface, surface = CardSurface,
     ) else Colors
     CompositionLocalProvider(LocalDensity provides Density(density.density, density.fontScale * preferences.textSize.scale)) {
         MaterialTheme(

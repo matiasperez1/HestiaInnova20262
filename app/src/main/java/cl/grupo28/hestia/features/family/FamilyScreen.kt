@@ -37,14 +37,14 @@ fun FamilyScreen(contacts: List<EmergencyContact>, saving: Boolean, onAdd: (Stri
                     }
                 }
                 SecondaryButton("Llamar", { onCall(contact) }, Modifier.semantics { contentDescription = "Llamar a ${contact.name}" })
-                TextButton({ deleting = contact }, Modifier.heightIn(min = 48.dp).semantics { contentDescription = "Eliminar a ${contact.name}" }) { Text("Eliminar") }
+                TextButton({ deleting = contact }, Modifier.heightIn(min = 48.dp).semantics { contentDescription = "Eliminar a ${contact.name}" }) { Text("Eliminar", color = MaterialTheme.colorScheme.error) }
             }
         }
     }
     if (adding) AddContactDialog(saving, { adding = false }, { name, phone -> onAdd(name, phone) { adding = false } })
     deleting?.let { contact ->
         AlertDialog(onDismissRequest = { if (!saving) deleting = null }, title = { Text("¿Eliminar a ${contact.name}?") },
-            confirmButton = { TextButton({ onRemove(contact.id) { deleting = null } }, enabled = !saving) { Text("Eliminar contacto") } },
+            confirmButton = { TextButton({ onRemove(contact.id) { deleting = null } }, enabled = !saving) { Text("Eliminar contacto", color = MaterialTheme.colorScheme.error) } },
             dismissButton = { TextButton({ deleting = null }, enabled = !saving) { Text("Cancelar") } })
     }
 }

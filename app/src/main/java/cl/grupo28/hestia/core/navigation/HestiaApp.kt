@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
@@ -90,14 +91,14 @@ private fun MainNavigation(viewModel: HestiaViewModel) {
         topBar = { BrandHeader(if (detail) { { nav.popBackStack(); Unit } } else null, if (route == "summary") { { nav.navigate("settings") } } else null) },
         bottomBar = {
             Surface(color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
-                Row(Modifier.fillMaxWidth().navigationBarsPadding().selectableGroup().padding(6.dp)) {
+                Row(Modifier.fillMaxWidth().navigationBarsPadding().selectableGroup().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     destinations.forEach { destination ->
                         val active = selected == destination.route
                         Surface(Modifier.weight(1f), shape = MaterialTheme.shapes.medium, color = if (active) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface) {
                             Column(Modifier.fillMaxWidth().heightIn(min = 76.dp).testTag("tab_${destination.route}").selectable(active, role = Role.Tab, onClick = { openMain(destination.route) }).padding(horizontal = 4.dp, vertical = 10.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
                                 HestiaIcon(destination.icon)
-                                Text(destination.label, style = MaterialTheme.typography.labelMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                Text(destination.label, fontWeight = if (active) FontWeight.Bold else FontWeight.Normal, style = MaterialTheme.typography.labelMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                             }
                         }
                     }

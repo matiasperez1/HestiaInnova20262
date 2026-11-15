@@ -36,7 +36,7 @@ Pantalla principal: semana actual y tres tarjetas simples, sin gráficos inneces
 - Llamadas registradas por Hestia y sospechosas; correos analizados y sospechosos.
 - Alertas revisadas por el usuario.
 
-Calcular exclusivamente desde eventos registrados, con semana de lunes a domingo y zona horaria del dispositivo. Evitar duplicados. Una detección no es un rechazo ni una revisión. Sin datos conectados mostrar «—»; cero solo cuando exista una fuente real consultada y el resultado sea cero.
+Calcular exclusivamente desde eventos registrados, con semana de lunes a domingo y zona horaria del dispositivo. Evitar duplicados. Una detección no es un rechazo ni una revisión. Sin datos conectados mostrar «Sin datos»; cero solo cuando exista una fuente real consultada y el resultado sea cero.
 
 CallScreeningService no recibe necesariamente todas las llamadas: contactos necesitan READ_CONTACTS y números privados/restringidos pueden no estar disponibles. Las cifras no representan el historial telefónico completo. No pedir READ_CALL_LOG ni calcular supuestas estafas evitadas.
 

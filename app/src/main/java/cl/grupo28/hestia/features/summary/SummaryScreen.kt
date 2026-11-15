@@ -30,7 +30,8 @@ fun SummaryScreen(week: WeekRange, summary: WeeklySummary?) {
                 Metric(summary?.registeredCalls, "Registradas por Hestia", Modifier.weight(1f))
                 Metric(summary?.suspiciousCalls, "Sospechosas", Modifier.weight(1f))
             }
-            HorizontalDivider()
+        }
+        HestiaCard {
             MetricHeading("Correos", HestiaSymbol.MAIL)
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Metric(summary?.analyzedEmails, "Analizados", Modifier.weight(1f))
@@ -39,7 +40,7 @@ fun SummaryScreen(week: WeekRange, summary: WeeklySummary?) {
         }
         HestiaCard {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                Text(summary?.reviewedAlerts?.toString() ?: "—", style = MaterialTheme.typography.displaySmall)
+                Text(summary?.reviewedAlerts?.toString() ?: "Sin datos", style = if (summary == null) MaterialTheme.typography.titleLarge else MaterialTheme.typography.displaySmall)
                 Text("Alertas revisadas por ti", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
             }
         }
@@ -58,7 +59,7 @@ private fun MetricHeading(text: String, symbol: HestiaSymbol) {
 @Composable
 private fun Metric(value: Int?, label: String, modifier: Modifier) {
     Column(modifier.clearAndSetSemantics { contentDescription = "$label: ${value?.toString() ?: "Sin datos"}" }, verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        Text(value?.toString() ?: "—", style = MaterialTheme.typography.displaySmall)
+        Text(value?.toString() ?: "Sin datos", style = if (value == null) MaterialTheme.typography.titleLarge else MaterialTheme.typography.displaySmall)
         Text(label, style = MaterialTheme.typography.bodyMedium)
     }
 }

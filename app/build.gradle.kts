@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "cl.grupo28innova.heldiainnova2026_2"
+    namespace = "cl.grupo28.heldia"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "cl.grupo28innova.heldiainnova2026_2"
+        applicationId = "cl.grupo28.heldia"
         minSdk = 29
         targetSdk = 37
         versionCode = 1

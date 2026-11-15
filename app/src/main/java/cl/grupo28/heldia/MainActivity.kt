@@ -1,4 +1,4 @@
-package cl.grupo28innova.heldiainnova2026_2
+package cl.grupo28.heldia
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,14 +11,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import cl.grupo28innova.heldiainnova2026_2.ui.theme.HeldiaInnova20262Theme
+import cl.grupo28.heldia.ui.theme.HeldiaTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            HeldiaInnova20262Theme {
+            HeldiaTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Greeting(
                         name = "Android",
@@ -41,7 +41,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    HeldiaInnova20262Theme {
+    HeldiaTheme {
         Greeting("Android")
     }
 }

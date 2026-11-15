@@ -1,4 +1,4 @@
-package cl.grupo28innova.heldiainnova2026_2.ui.theme
+package cl.grupo28.heldia.ui.theme
 
 import android.app.Activity
 import android.os.Build
@@ -34,7 +34,7 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun HeldiaInnova20262Theme(
+fun HeldiaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,

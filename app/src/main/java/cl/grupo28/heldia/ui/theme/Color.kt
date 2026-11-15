@@ -1,4 +1,4 @@
-package cl.grupo28innova.heldiainnova2026_2.ui.theme
+package cl.grupo28.heldia.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

@@ -1,8 +1,12 @@
-# AGENTS.md — Antifraude
+# AGENTS.md — Heldia
 
 ## 1. Contexto del producto
 
-Antifraude es una aplicación Android del Grupo 28 para ayudar a adultos mayores a prevenir estafas bancarias y digitales.
+Heldia es una aplicación Android del Grupo 28 para ayudar a adultos mayores a prevenir estafas bancarias y digitales.
+
+Nombre oficial del producto y del proyecto Gradle: **Heldia**.
+Namespace, application ID y paquete Kotlin definitivos: `cl.grupo28.heldia`.
+La palabra antifraude describe el propósito y las funcionalidades del producto.
 
 La aplicación combina:
 - Análisis de correos de Gmail.

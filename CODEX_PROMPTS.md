@@ -1,4 +1,4 @@
-# CODEX_PROMPTS.md — Plan de implementación
+# CODEX_PROMPTS.md — Plan de implementación de Heldia
 
 ## Instrucciones generales
 
@@ -7,6 +7,10 @@ Trabajar en una etapa a la vez. No avanzar automáticamente.
 Después de cada etapa, compilar y ejecutar las pruebas disponibles.
 No inventar credenciales ni presentar datos simulados como reales.
 
+Nombre oficial del producto y del proyecto Gradle: **Heldia**.
+Namespace, application ID y paquete Kotlin definitivos: `cl.grupo28.heldia`.
+Mantener antifraude como descripción del propósito y las funcionalidades.
+
 ---
 
 ## ETAPA 0 — Inspección y plan
@@ -14,6 +18,10 @@ No inventar credenciales ni presentar datos simulados como reales.
 Usar `/plan` con este prompt:
 
 > Lee AGENTS.md, MVP_SPEC.md y CODEX_PROMPTS.md. Inspecciona el repositorio sin modificarlo. Revisa Gradle, JDK, SDK, package name, dependencias y estructura. Prepara un plan por etapas para implementar el MVP. Identifica riesgos técnicos y credenciales externas necesarias, especialmente Gmail OAuth, SMS y CallScreeningService. No escribas código todavía.
+
+## ETAPA 0.5 — Identidad y preparación técnica
+
+> Lee completos AGENTS.md, MVP_SPEC.md y CODEX_PROMPTS.md. Establece Heldia como nombre visible y nombre del proyecto Gradle; migra namespace, application ID, paquetes Kotlin y pruebas a cl.grupo28.heldia, incluidos directorios, imports, tema y documentación. Conserva la carpeta física y el repositorio. Comprueba el JDK 25 de Gradle y documenta la configuración local de terminal sin guardar rutas del computador ni modificar variables globales. Investiga lint sin actualizar dependencias solo para eliminar advertencias. Conserva AGP, Gradle, SDK y soporte Kotlin integrado. Ejecuta clean, assembleDebug, testDebugUnitTest, lintDebug y connectedDebugAndroidTest si hay emulador. No agregues funcionalidades, permisos ni integraciones. Reporta cambios, resultados y limitaciones; no hagas commit ni push.
 
 ## ETAPA 1 — Diseño visual y navegación
 

@@ -1,8 +1,8 @@
-# MVP_SPEC.md — Especificación funcional Antifraude
+# MVP_SPEC.md — Especificación funcional Heldia
 
 ## 1. Resumen
 
-Antifraude es una aplicación Android orientada a adultos mayores. Busca prevenir estafas bancarias y digitales mediante detección de comunicaciones sospechosas, educación práctica y acompañamiento de contactos de confianza.
+Heldia es una aplicación Android orientada a adultos mayores. Busca prevenir estafas bancarias y digitales mediante detección de comunicaciones sospechosas, educación práctica y acompañamiento de contactos de confianza.
 
 La aplicación no reemplaza al banco, a Gmail ni a la aplicación telefónica. Funciona como una capa de orientación y alerta.
 
@@ -19,7 +19,8 @@ La aplicación no reemplaza al banco, a Gmail ni a la aplicación telefónica. F
 - `BroadcastReceiver` para SMS.
 - FCM opcional para notificaciones remotas.
 
-Package sugerido: `cl.grupo28.antifraude`.
+Nombre oficial del producto y del proyecto Gradle: **Heldia**.
+Namespace, application ID y paquete Kotlin definitivos: `cl.grupo28.heldia`.
 
 Distribución inicial: APK para pruebas. La distribución por APK no exime de restricciones técnicas de Android ni de políticas de Google Play.
 
@@ -153,8 +154,8 @@ Aceptar texto compartido por el usuario mediante `ACTION_SEND` y `text/plain`.
 
 Flujo:
 1. El usuario elige Compartir desde su aplicación de mensajes.
-2. Selecciona Antifraude.
-3. Antifraude recibe el texto.
+2. Selecciona Heldia.
+3. Heldia recibe el texto.
 4. Ejecuta el analizador.
 5. Muestra riesgo, indicadores y recomendación.
 6. Ofrece compartir el incidente con el contacto de confianza.

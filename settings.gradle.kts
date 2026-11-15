@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Heldia Innova 2026-2"
+rootProject.name = "Heldia"
 include(":app")

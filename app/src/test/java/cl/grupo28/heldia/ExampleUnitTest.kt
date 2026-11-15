@@ -1,4 +1,4 @@
-package cl.grupo28innova.heldiainnova2026_2
+package cl.grupo28.heldia
 
 import org.junit.Test
 

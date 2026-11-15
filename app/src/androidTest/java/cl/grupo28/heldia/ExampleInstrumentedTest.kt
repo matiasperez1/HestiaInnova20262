@@ -1,4 +1,4 @@
-package cl.grupo28innova.heldiainnova2026_2
+package cl.grupo28.heldia
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -19,6 +19,7 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("cl.grupo28innova.heldiainnova2026_2", appContext.packageName)
+        assertEquals("cl.grupo28.heldia", appContext.packageName)
+        assertEquals("Heldia", appContext.applicationInfo.loadLabel(appContext.packageManager).toString())
     }
 }

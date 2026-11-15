@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Heldia"
+rootProject.name = "Hestia"
 include(":app")

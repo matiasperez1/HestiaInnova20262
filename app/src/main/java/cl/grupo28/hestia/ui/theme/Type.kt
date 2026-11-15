@@ -1,4 +1,4 @@
-package cl.grupo28.heldia.ui.theme
+package cl.grupo28.hestia.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

@@ -1,4 +1,4 @@
-package cl.grupo28.heldia
+package cl.grupo28.hestia
 
 import org.junit.Test
 

@@ -1,9 +1,9 @@
-# Heldia
+# Hestia
 
-Proyecto Android nativo de Heldia, aplicación antifraude del Grupo 28 orientada a adultos mayores. Utiliza Kotlin, Jetpack Compose y Material 3. Actualmente conserva la pantalla de plantilla; las funcionalidades del MVP se implementarán por etapas.
+Proyecto Android nativo de Hestia, aplicación antifraude del Grupo 28 orientada a adultos mayores. Utiliza Kotlin, Jetpack Compose y Material 3. Actualmente conserva la pantalla de plantilla; las funcionalidades del MVP se implementarán por etapas.
 
-Nombre visible y nombre del proyecto Gradle: **Heldia**.
-Namespace, application ID y paquetes Kotlin: `cl.grupo28.heldia`.
+Nombre visible y nombre del proyecto Gradle: **Hestia**.
+Namespace, application ID y paquetes Kotlin: `cl.grupo28.hestia`.
 
 ## Contenido
 
@@ -15,7 +15,7 @@ Namespace, application ID y paquetes Kotlin: `cl.grupo28.heldia`.
 ## Cómo usar
 
 1. Crear un proyecto Android nativo desde Android Studio usando Empty Activity con Jetpack Compose.
-2. Mantener el identificador definitivo `cl.grupo28.heldia`.
+2. Mantener el identificador definitivo `cl.grupo28.hestia`.
 3. Abrir la carpeta raíz del proyecto en VS Code.
 4. Copiar estos archivos a la raíz del repositorio.
 5. Abrir Codex.

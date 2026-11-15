@@ -1,12 +1,20 @@
-# AGENTS.md — Heldia
+# AGENTS.md — Hestia
 
 ## 1. Contexto del producto
 
-Heldia es una aplicación Android del Grupo 28 para ayudar a adultos mayores a prevenir estafas bancarias y digitales.
+Hestia es una aplicación Android del Grupo 28 para ayudar a adultos mayores a prevenir estafas bancarias y digitales.
 
-Nombre oficial del producto y del proyecto Gradle: **Heldia**.
-Namespace, application ID y paquete Kotlin definitivos: `cl.grupo28.heldia`.
+Nombre oficial del producto y del proyecto Gradle: **Hestia**.
+Namespace, application ID y paquete Kotlin definitivos: `cl.grupo28.hestia`.
 La palabra antifraude describe el propósito y las funcionalidades del producto.
+
+### Identidad de marca
+
+Hestia representa protección, hogar, familia y tranquilidad. Su identidad visual debe transmitir seguridad, confianza, cercanía, estabilidad y protección familiar.
+
+La inspiración en la diosa griega del hogar y el fuego sagrado debe ser sutil y contemporánea. No utilizar ilustraciones literales de diosas griegas, templos ni elementos mitológicos excesivos. Se pueden explorar símbolos abstractos de una llama protegida, un hogar, una estructura arquitectónica o un círculo de protección.
+
+La aplicación debe mantenerse moderna y profesional, sin parecer una aplicación temática de mitología.
 
 La aplicación combina:
 - Análisis de correos de Gmail.

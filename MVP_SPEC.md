@@ -1,10 +1,18 @@
-# MVP_SPEC.md — Especificación funcional Heldia
+# MVP_SPEC.md — Especificación funcional Hestia
 
 ## 1. Resumen
 
-Heldia es una aplicación Android orientada a adultos mayores. Busca prevenir estafas bancarias y digitales mediante detección de comunicaciones sospechosas, educación práctica y acompañamiento de contactos de confianza.
+Hestia es una aplicación Android orientada a adultos mayores. Busca prevenir estafas bancarias y digitales mediante detección de comunicaciones sospechosas, educación práctica y acompañamiento de contactos de confianza.
 
 La aplicación no reemplaza al banco, a Gmail ni a la aplicación telefónica. Funciona como una capa de orientación y alerta.
+
+### Identidad de marca
+
+Hestia representa protección, hogar, familia y tranquilidad. Su identidad visual debe transmitir seguridad, confianza, cercanía, estabilidad y protección familiar.
+
+La inspiración en la diosa griega del hogar y el fuego sagrado debe ser sutil y contemporánea. No utilizar ilustraciones literales de diosas griegas, templos ni elementos mitológicos excesivos. Se pueden explorar símbolos abstractos de una llama protegida, un hogar, una estructura arquitectónica o un círculo de protección.
+
+La aplicación debe mantenerse moderna y profesional, sin parecer una aplicación temática de mitología.
 
 ## 2. Plataforma y stack
 
@@ -19,8 +27,8 @@ La aplicación no reemplaza al banco, a Gmail ni a la aplicación telefónica. F
 - `BroadcastReceiver` para SMS.
 - FCM opcional para notificaciones remotas.
 
-Nombre oficial del producto y del proyecto Gradle: **Heldia**.
-Namespace, application ID y paquete Kotlin definitivos: `cl.grupo28.heldia`.
+Nombre oficial del producto y del proyecto Gradle: **Hestia**.
+Namespace, application ID y paquete Kotlin definitivos: `cl.grupo28.hestia`.
 
 Distribución inicial: APK para pruebas. La distribución por APK no exime de restricciones técnicas de Android ni de políticas de Google Play.
 
@@ -154,8 +162,8 @@ Aceptar texto compartido por el usuario mediante `ACTION_SEND` y `text/plain`.
 
 Flujo:
 1. El usuario elige Compartir desde su aplicación de mensajes.
-2. Selecciona Heldia.
-3. Heldia recibe el texto.
+2. Selecciona Hestia.
+3. Hestia recibe el texto.
 4. Ejecuta el analizador.
 5. Muestra riesgo, indicadores y recomendación.
 6. Ofrece compartir el incidente con el contacto de confianza.

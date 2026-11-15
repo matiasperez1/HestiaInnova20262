@@ -1,4 +1,4 @@
-# CODEX_PROMPTS.md — Plan de implementación de Heldia
+# CODEX_PROMPTS.md — Plan de implementación de Hestia
 
 ## Instrucciones generales
 
@@ -7,8 +7,8 @@ Trabajar en una etapa a la vez. No avanzar automáticamente.
 Después de cada etapa, compilar y ejecutar las pruebas disponibles.
 No inventar credenciales ni presentar datos simulados como reales.
 
-Nombre oficial del producto y del proyecto Gradle: **Heldia**.
-Namespace, application ID y paquete Kotlin definitivos: `cl.grupo28.heldia`.
+Nombre oficial del producto y del proyecto Gradle: **Hestia**.
+Namespace, application ID y paquete Kotlin definitivos: `cl.grupo28.hestia`.
 Mantener antifraude como descripción del propósito y las funcionalidades.
 
 ---
@@ -21,7 +21,11 @@ Usar `/plan` con este prompt:
 
 ## ETAPA 0.5 — Identidad y preparación técnica
 
-> Lee completos AGENTS.md, MVP_SPEC.md y CODEX_PROMPTS.md. Establece Heldia como nombre visible y nombre del proyecto Gradle; migra namespace, application ID, paquetes Kotlin y pruebas a cl.grupo28.heldia, incluidos directorios, imports, tema y documentación. Conserva la carpeta física y el repositorio. Comprueba el JDK 25 de Gradle y documenta la configuración local de terminal sin guardar rutas del computador ni modificar variables globales. Investiga lint sin actualizar dependencias solo para eliminar advertencias. Conserva AGP, Gradle, SDK y soporte Kotlin integrado. Ejecuta clean, assembleDebug, testDebugUnitTest, lintDebug y connectedDebugAndroidTest si hay emulador. No agregues funcionalidades, permisos ni integraciones. Reporta cambios, resultados y limitaciones; no hagas commit ni push.
+> Lee completos AGENTS.md, MVP_SPEC.md y CODEX_PROMPTS.md. Establece Hestia como nombre visible y nombre del proyecto Gradle; migra namespace, application ID, paquetes Kotlin y pruebas a cl.grupo28.hestia, incluidos directorios, imports, tema y documentación. Conserva la carpeta física y el repositorio. Comprueba el JDK 25 de Gradle y documenta la configuración local de terminal sin guardar rutas del computador ni modificar variables globales. Investiga lint sin actualizar dependencias solo para eliminar advertencias. Conserva AGP, Gradle, SDK y soporte Kotlin integrado. Ejecuta clean, assembleDebug, testDebugUnitTest, lintDebug y connectedDebugAndroidTest si hay emulador. No agregues funcionalidades, permisos ni integraciones. Reporta cambios, resultados y limitaciones; no hagas commit ni push.
+
+## ETAPA 0.6 — Identidad definitiva de Hestia
+
+> Lee AGENTS.md, MVP_SPEC.md y CODEX_PROMPTS.md. Establece Hestia como nombre comercial, nombre visible y nombre del proyecto Gradle. Migra namespace, application ID, paquetes Kotlin, directorios, imports, tema y pruebas a cl.grupo28.hestia. Actualiza la documentación y la orientación de marca: protección, hogar, familia y tranquilidad, con inspiración mitológica sutil y contemporánea. Verifica ausencia de nombres y paquetes temporales en fuentes y documentos. Mantén AGP 9.5.1, Gradle 9.6.0, JDK 25, Kotlin, SDK y dependencias actuales. No cambies la carpeta física ni el repositorio. Ejecuta clean, assembleDebug, testDebugUnitTest, lintDebug y pruebas instrumentales si hay emulador. No implementes funcionalidades ni comiences la ETAPA 1. No hagas commit ni push.
 
 ## ETAPA 1 — Diseño visual y navegación
 

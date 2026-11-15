@@ -4,44 +4,18 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import cl.grupo28.hestia.ui.theme.HestiaTheme
+import cl.grupo28.hestia.core.navigation.HestiaApp
+import androidx.lifecycle.ViewModelProvider
+import cl.grupo28.hestia.core.HestiaViewModel
+import cl.grupo28.hestia.data.DataStoreSettingsRepository
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val viewModel = ViewModelProvider(this, HestiaViewModel.Factory(DataStoreSettingsRepository(applicationContext)))[HestiaViewModel::class.java]
         setContent {
-            HestiaTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
+            HestiaApp(viewModel)
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    HestiaTheme {
-        Greeting("Android")
     }
 }

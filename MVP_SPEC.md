@@ -1,390 +1,90 @@
-# MVP_SPEC.md — Especificación funcional Hestia
+# MVP_SPEC.md — Hestia
 
-## 1. Resumen
+## 1. Propósito e identidad
 
-Hestia es una aplicación Android orientada a adultos mayores. Busca prevenir estafas bancarias y digitales mediante detección de comunicaciones sospechosas, educación práctica y acompañamiento de contactos de confianza.
+Tres objetivos: identificar llamadas y correos sospechosos, mostrar un resumen semanal real y enseñar prevención de estafas a adultos mayores. Configuración una vez y uso cotidiano silencioso y sencillo.
 
-La aplicación no reemplaza al banco, a Gmail ni a la aplicación telefónica. Funciona como una capa de orientación y alerta.
+Hestia (`cl.grupo28.hestia`) representa protección, hogar, familia y tranquilidad. Debe transmitir seguridad, confianza, cercanía, estabilidad y protección familiar. Inspiración mitológica sutil y contemporánea, con símbolos abstractos de hogar o llama protegida; sin diosas ni templos literales.
 
-### Identidad de marca
+Mantener la paleta de AGENTS.md, fondos claros, números grandes y botones de 56 dp. Explicaciones de dos o tres líneas cuando sea posible, sin recortar fuentes ampliadas. Una acción principal, sin párrafos o advertencias técnicas en el resumen.
 
-Hestia representa protección, hogar, familia y tranquilidad. Su identidad visual debe transmitir seguridad, confianza, cercanía, estabilidad y protección familiar.
+Android 10/API 29+, Kotlin, Compose, Material 3, MVVM/StateFlow, Navigation Compose y DataStore. Mantener las versiones técnicas validadas.
 
-La inspiración en la diosa griega del hogar y el fuego sagrado debe ser sutil y contemporánea. No utilizar ilustraciones literales de diosas griegas, templos ni elementos mitológicos excesivos. Se pueden explorar símbolos abstractos de una llama protegida, un hogar, una estructura arquitectónica o un círculo de protección.
+## 2. Navegación
 
-La aplicación debe mantenerse moderna y profesional, sin parecer una aplicación temática de mitología.
+Solo tres pestañas: **Resumen, Aprender, Familia**. Ajustes desde Resumen. Sin sección independiente de Protección. Sin integración de mensajes; WhatsApp solo como educación.
 
-## 2. Plataforma y stack
+## 3. Primer inicio
 
-- Android 10 o superior (API 29+).
-- Kotlin y Jetpack Compose.
-- Material 3 personalizado.
-- MVVM, ViewModel y StateFlow.
-- Room y DataStore.
-- Supabase Auth y PostgreSQL.
-- Gmail API.
-- `CallScreeningService`.
-- `BroadcastReceiver` para SMS.
-- FCM opcional para notificaciones remotas.
+Guardar el avance y finalización del onboarding en DataStore. Tras completarlo, el siguiente inicio abre Resumen. Si se interrumpe, volver al último paso. Indicador de progreso y una pantalla por paso:
 
-Nombre oficial del producto y del proyecto Gradle: **Hestia**.
-Namespace, application ID y paquete Kotlin definitivos: `cl.grupo28.hestia`.
+1. «Bienvenido a Hestia»: «Te ayudamos a identificar llamadas y correos sospechosos». Botón Comenzar.
+2. Google: autenticación futura mediante Supabase Auth para identificar al usuario. No equivale a permiso Gmail.
+3. Gmail: «Hestia revisará tus correos para identificar posibles estafas». OAuth independiente y solo lectura.
+4. Llamadas: «Hestia puede identificar números sospechosos antes de que contestes». Rol ROLE_CALL_SCREENING mediante RoleManager junto con servicio real; el marcador habitual sigue atendiendo llamadas.
+5. Agenda: READ_CONTACTS opcional solo para incluir llamadas de números guardados; no para gestionar contactos de emergencia. Sin READ_CALL_LOG.
+6. Notificaciones: «Te avisaremos si detectamos algo sospechoso». POST_NOTIFICATIONS desde Android 13 y comprobación del estado en versiones anteriores.
+7. Finalización: mostrar únicamente estados reales. Botón Entrar a Hestia.
 
-Distribución inicial: APK para pruebas. La distribución por APK no exime de restricciones técnicas de Android ni de políticas de Google Play.
+**ETAPA 1.1:** no implementar aún Supabase Auth, Gmail OAuth, CallScreeningService ni permisos reales. Los pasos permanecen pendientes y permiten continuar sin concederlos. Completar el asistente registra que fue recorrido, no activa una protección. Las funciones pendientes se podrán configurar en una etapa posterior desde Ajustes.
 
-## 3. Usuarios
+## 4. Resumen semanal
 
-### Adulto mayor
-Puede iniciar sesión, configurar protecciones, consultar alertas, analizar mensajes, aprender a reconocer estafas y vincular contactos de confianza.
+Pantalla principal: semana actual y tres tarjetas simples, sin gráficos innecesarios:
 
-### Contacto de confianza
-Puede aceptar una invitación y recibir únicamente los incidentes y resúmenes que el adulto mayor haya autorizado compartir.
+- Estado general: solo conexiones reales.
+- Llamadas registradas por Hestia y sospechosas; correos analizados y sospechosos.
+- Alertas revisadas por el usuario.
 
-No existe configuración remota del teléfono. El adulto mayor concede personalmente los permisos en su dispositivo.
+Calcular exclusivamente desde eventos registrados, con semana de lunes a domingo y zona horaria del dispositivo. Evitar duplicados. Una detección no es un rechazo ni una revisión. Sin datos conectados mostrar «—»; cero solo cuando exista una fuente real consultada y el resultado sea cero.
 
-## 4. Navegación principal
+CallScreeningService no recibe necesariamente todas las llamadas: contactos necesitan READ_CONTACTS y números privados/restringidos pueden no estar disponibles. Las cifras no representan el historial telefónico completo. No pedir READ_CALL_LOG ni calcular supuestas estafas evitadas.
 
-Cuatro secciones:
-1. Inicio.
-2. Protección.
-3. Aprende a protegerte.
-4. Mi persona de confianza.
+## 5. Familia
 
-Acceso visible a accesibilidad y ajustes desde las pantallas principales.
-
-## 5. Onboarding
-
-Asistente de configuración:
-1. Bienvenida.
-2. Iniciar sesión con Google.
-3. Conectar Gmail (autorización independiente).
-4. Activar identificación de llamadas.
-5. Activar notificaciones.
-6. Ofrecer activar detección automática de SMS (opcional).
-7. Mostrar resumen de protecciones activas y pendientes.
+Lista de contactos de emergencia: nombre, número, iniciales o foto, Llamar y Eliminar. Botón principal Agregar contacto. Entrada manual o selector del sistema, sin permiso de agenda innecesario. Guardar varios localmente; confirmar la eliminación. Llamar abre ACTION_DIAL, sin CALL_PHONE.
 
-Cada pantalla debe explicar para qué sirve el permiso antes de abrir el diálogo oficial de Android o Google. Al volver, verificar el estado real. El usuario puede continuar sin permisos opcionales.
+Sin invitaciones, códigos, cuentas familiares, backend de contactos ni alertas automáticas. Nunca enviar información a terceros sin autorización explícita.
 
-No pedir permisos de contactos, micrófono, ubicación, `READ_SMS` ni accesibilidad del sistema.
+## 6. Aprender
 
-## 6. Dashboard
+Ruta simple con cinco lecciones de aproximadamente 2 a 3 minutos, incluido el ejercicio. Cada una tiene situación concreta, explicación, recomendación, pregunta, respuesta explicada y acceso a fuentes oficiales. Progreso local persistido, separado de métricas de protección.
 
-Mostrar:
-- Saludo.
-- Estado general de protección.
-- Estado de Gmail.
-- Estado de identificación de llamadas.
-- Estado de SMS (si se habilitó).
-- Alertas recientes.
-- Acceso a educación.
-- Contacto de confianza.
-- Resumen semanal.
+1. **¿Te llaman del banco?** No compartir claves/códigos, desconfiar de urgencia, cortar y verificar por canal oficial. CMF y ChileAtiende.
+2. **Correos electrónicos falsos.** Remitente, enlaces, adjuntos y datos personales. SERNAC.
+3. **Estafas por WhatsApp.** Suplantación familiar, presión para transferir y códigos; verificar por otro medio. ChileAtiende.
+4. **Créditos e inversiones fraudulentas.** Ofertas, pagos anticipados y entidades no reguladas; consultar CMF.
+5. **¿Qué hago si fui víctima?** Avisar al banco, bloquear, guardar identificador y antecedentes, denunciar y entregar respaldo. Ley 20.009 y ChileAtiende.
 
-Mantener la pantalla despejada, con pocas acciones principales y botones grandes.
+Artículo 2 de la Ley 20.009: canales gratuitos, permanentes, 24 horas; registro del aviso, identificador y bloqueo. Artículo 4 bis: deber del usuario de prevenir uso indebido e información clara, accesible y actualizada por las entidades. No afirmar que prohíbe expresamente llamadas para pedir claves ni prometer devolución automática. Atribuir el consejo sobre claves a las recomendaciones de seguridad.
 
-## 7. Gmail
+Fuentes obligatorias:
 
-### Objetivo
-Analizar correos para detectar señales de phishing y suplantación bancaria.
+- [CMF: prevención](https://www.cmfchile.cl/educa/621/w3-article-52008.html).
+- [CMF: alertas](https://www.cmfchile.cl/educa/621/w3-propertyvalue-49625.html).
+- [SERNAC: phishing](https://www.sernac.cl/portal/607/w3-article-1612.html).
+- [ChileAtiende: Más Vale Prevenir](https://portal.chileatiende.gob.cl/fichas/81544-campana-mas-vale-prevenir).
+- [BCN: Ley 20.009](https://www.bcn.cl/leychile/navegar?idLey=20009).
 
-### Alcance inicial
-- Autorización OAuth independiente del login.
-- Sincronización manual de correos recientes.
-- Extraer remitente, asunto, encabezados y enlaces cuando estén disponibles.
-- Revisar `From` y `Reply-To`.
-- Comparar dominios con una lista mantenida de dominios oficiales.
-- Revisar resultados SPF, DKIM y DMARC solo si aparecen en encabezados disponibles.
-- Detectar enlaces cuyo dominio no coincida con el dominio institucional esperado.
-- Mostrar señales encontradas y recomendación.
-
-### Restricciones
-- `gmail.readonly` es un scope restringido de Google.
-- La app debe configurarse en Google Cloud con consentimiento OAuth y usuarios de prueba.
-- La publicación pública requiere cumplir los procesos de verificación aplicables.
-- No almacenar el cuerpo completo de correos en Supabase.
-- No afirmar que un correo es seguro solo porque el dominio coincide.
-- No abrir enlaces automáticamente.
-
-Empezar con sincronización manual. La sincronización periódica es una mejora posterior.
-
-## 8. Identificación de llamadas
-
-### Objetivo
-Identificar llamadas entrantes cuyo número haya sido reportado o clasificado como sospechoso.
-
-### Implementación
-- `CallScreeningService`.
-- Solicitar `ROLE_CALL_SCREENING`.
-- Leer número disponible en los detalles de la llamada.
-- Normalizar a E.164 cuando sea posible.
-- Consultar caché local sincronizada desde backend.
-- Clasificar según reportes y estado de verificación.
-- Registrar evento mínimo.
-- Responder dentro del plazo de Android (cinco segundos).
-
-### Limitaciones
-- No escuchar ni grabar audio.
-- No transcribir llamadas.
-- No analizar la conversación.
-- No bloquear automáticamente llamadas.
-- No hacer consultas de red en tiempo real.
-- No garantizar una interfaz personalizada sobre todas las aplicaciones telefónicas.
-- El número puede ser suplantado.
-- Sin `READ_CONTACTS`, los números guardados en contactos pueden no entregarse al servicio.
-
-## 9. SMS entrantes
-
-### Objetivo
-Detectar señales de fraude en nuevos SMS recibidos, si el usuario concede el permiso.
-
-### Implementación
-- `BroadcastReceiver` para `Telephony.Sms.Intents.SMS_RECEIVED_ACTION`.
-- Declarar y solicitar `RECEIVE_SMS`.
-- Extraer remitente, cuerpo y fecha del SMS entrante.
-- Reconstruir mensajes multipartes.
-- Ejecutar análisis local y rápido.
-- Registrar un evento mínimo.
-- Mostrar notificación si el riesgo lo justifica.
-
-### Restricciones
-- No solicitar `READ_SMS`.
-- No leer historial de mensajes.
-- No convertirse en la app SMS predeterminada.
-- No enviar el cuerpo completo al backend.
-- No hacer llamadas de red dentro del receiver.
-- Mantener alternativa de análisis manual si el permiso se rechaza.
-
-El permiso SMS está restringido por Google Play. La app puede probarse por APK con el permiso concedido, pero eso no garantiza que Google Play autorice su publicación. Revisar la política vigente antes de publicar.
-
-## 10. Análisis manual de SMS y WhatsApp
-
-Aceptar texto compartido por el usuario mediante `ACTION_SEND` y `text/plain`.
-
-Flujo:
-1. El usuario elige Compartir desde su aplicación de mensajes.
-2. Selecciona Hestia.
-3. Hestia recibe el texto.
-4. Ejecuta el analizador.
-5. Muestra riesgo, indicadores y recomendación.
-6. Ofrece compartir el incidente con el contacto de confianza.
-
-No acceder automáticamente a WhatsApp ni a la bandeja SMS.
-
-## 11. Motor antifraude
-
-Implementar reglas deterministas y separadas por canal.
-
-### Correo
-- Dominio no incluido en lista oficial.
-- Dominio parecido a uno oficial (typosquatting básico).
-- Diferencia entre From y Reply-To.
-- Fallos de autenticación disponibles en encabezados.
-- Enlaces externos o dominios inesperados.
-- Solicitud de claves/códigos.
-- Reportes previos.
-
-### SMS y mensajes compartidos
-- Solicitud de códigos de verificación.
-- Solicitud de contraseñas o datos bancarios.
-- Enlaces sospechosos.
-- Suplantación de banco o familiar.
-- Amenazas de bloqueo.
-- Urgencia o presión para transferir.
-- Solicitud de instalar aplicaciones o compartir pantalla.
-
-### Llamadas
-- Número reportado.
-- Cantidad de reportes.
-- Estado de revisión.
-- Antigüedad de reportes.
-
-Cada análisis devuelve `riskScore`, `riskLevel`, `reasonCodes`, `explanation` y `recommendation`.
-
-La puntuación es heurística y debe explicarse como indicador, no como probabilidad matemática de fraude.
-
-## 12. Reportes comunitarios
-
-Permitir reportar:
-- Números telefónicos.
-- Direcciones de correo.
-- Dominios.
-
-Estados:
-- `REPORTED`: recibido, aún no verificado.
-- `SUSPICIOUS`: señales suficientes para advertencia.
-- `VERIFIED`: revisado por administrador mediante criterios documentados.
-
-Una denuncia aislada no debe marcar automáticamente un elemento como fraude confirmado. Incluir controles para abuso y denuncias falsas.
-
-## 13. Contactos de confianza
-
-Vinculación por código:
-1. Adulto mayor genera invitación.
-2. Comparte código manualmente.
-3. Contacto inicia sesión.
-4. Ingresa el código.
-5. Acepta la vinculación.
-6. Se crea relación.
-
-El adulto mayor controla qué eventos se comparten. No solicitar acceso a la agenda del dispositivo.
-
-## 14. Educación antifraude
-
-Crear seis lecciones iniciales:
-1. Falsos ejecutivos bancarios.
-2. Solicitudes de claves y códigos.
-3. Enlaces bancarios falsos.
-4. Estafas por WhatsApp y suplantación familiar.
-5. Aplicaciones maliciosas y acceso remoto.
-6. Transferencias sospechosas.
-
-Cada lección incluye:
-- Cómo funciona.
-- Señales de alerta.
-- Qué hacer.
-- Qué no hacer.
-- Una pregunta o escenario interactivo.
-
-Crear una sección destacada: “Creo que estoy siendo víctima de una estafa”.
-
-Instrucciones:
-1. Detener la comunicación.
-2. No entregar claves ni códigos.
-3. No transferir dinero ni instalar aplicaciones indicadas por desconocidos.
-4. Contactar al banco por canales oficiales.
-5. Avisar al contacto de confianza.
-
-Si ya hubo transferencia o entrega de datos, indicar que contacte inmediatamente al banco por canales oficiales para bloquear o proteger productos.
-
-## 15. Resumen semanal
-
-Mostrar métricas derivadas de eventos registrados:
-- Correos analizados.
-- Correos con señales sospechosas.
-- Llamadas identificadas como sospechosas.
-- SMS analizados.
-- Mensajes compartidos analizados.
-- Alertas compartidas.
-- Lecciones completadas.
-
-Distinguir “amenazas detectadas” de “estafas evitadas”. No afirmar pérdidas económicas evitadas sin evidencia.
-
-## 16. Accesibilidad
-
-Menú accesible desde pantallas principales:
-- Texto estándar, grande y muy grande.
-- Alto contraste.
-- Lectura en voz alta con TextToSpeech.
-- Interfaz simplificada.
-- Reducir animaciones.
-- Restablecer preferencias.
-
-Persistir con DataStore. Respetar TalkBack, escalado de fuente del sistema y semántica Compose.
-
-## 17. Modelo de datos inicial sugerido
-
-### profiles
-- `id` UUID vinculado a `auth.users`.
-- `full_name`.
-- `email`.
-- `role` (`PROTECTED_USER` o `TRUSTED_CONTACT`).
-- `created_at`.
-
-### trusted_relationships
-- `id`.
-- `protected_user_id`.
-- `trusted_contact_id`.
-- `status`.
-- `created_at`.
-
-### invitations
-- `id`.
-- `owner_id`.
-- `code_hash`.
-- `expires_at`.
-- `used_by`.
-
-### official_domains
-- `id`.
-- `domain`.
-- `institution_name`.
-- `verification_status`.
-- `updated_at`.
-
-### reported_phone_numbers
-- `id`.
-- `phone_e164`.
-- `report_count`.
-- `risk_level`.
-- `status`.
-- `last_reported_at`.
-
-### reported_email_senders
-- `id`.
-- `sender_identifier`.
-- `report_count`.
-- `risk_level`.
-- `status`.
-
-### security_events
-- `id`.
-- `user_id`.
-- `channel`.
-- `risk_level`.
-- `reason_codes` JSONB.
-- `family_visible`.
-- `created_at`.
-
-No guardar cuerpos completos de correos o SMS en estas tablas.
-
-### education_progress
-- `id`.
-- `user_id`.
-- `lesson_id`.
-- `completed_at`.
-
-### device_tokens
-- `id`.
-- `user_id`.
-- `fcm_token`.
-- `created_at`.
-
-Implementar RLS y políticas mínimas necesarias. Los contactos solo pueden leer eventos expresamente compartidos con ellos.
-
-## 18. Fuera de alcance
-
-- Captura, grabación o transcripción de audio de llamadas celulares.
-- Análisis de llamadas en vivo.
-- Lectura automática de WhatsApp.
-- Lectura histórica de SMS.
-- Bloqueo automático de llamadas.
-- Aplicación iOS.
-- Entrenamiento de un modelo de IA propio.
-- Acceso remoto al teléfono del adulto mayor.
-
-## 19. Criterios de aceptación
-
-- APK instalable en Android 10 o superior.
-- Login funcional o integración configurada y probada.
-- Onboarding verifica permisos reales.
-- Preferencias de accesibilidad persisten.
-- Gmail analiza correos reales de una cuenta de prueba autorizada.
-- CallScreeningService puede activarse y consultar caché local en dispositivo compatible.
-- SMS entrante se analiza si `RECEIVE_SMS` fue concedido y el dispositivo permite la prueba.
-- Mensaje compartido desde WhatsApp se analiza manualmente.
-- Lecciones educativas funcionan.
-- Vinculación familiar funciona con dos cuentas de prueba.
-- Estadísticas se calculan a partir de eventos reales.
-- Los permisos denegados no hacen fallar el resto de la app.
-
-## 20. Prioridad de una semana
-
-1. Día 1: estructura, diseño, navegación.
-2. Día 2: onboarding y accesibilidad.
-3. Día 3: motor antifraude y educación.
-4. Día 4: SMS y llamadas.
-5. Día 5: Gmail.
-6. Día 6: Supabase, contactos y eventos.
-7. Día 7: pruebas, correcciones y APK.
-
-Ajustar el orden según bloqueos de credenciales y pruebas físicas. Es preferible entregar menos funcionalidades probadas que muchas pantallas incompletas.
+Material original de Hestia; no son cursos publicados ni avalados por esos organismos. Se complementa SERNAC con su guía reciente de prevención: https://www.sernac.cl/portal/607/w3-article-86575.html. No presentar el candado del navegador como prueba de autenticidad.
+
+## 7. Integraciones posteriores
+
+Google/Supabase Auth separado de Gmail OAuth gmail.readonly. No permisos de envío, borrado o modificación. Pruebas con cuentas autorizadas y configuración Google Cloud; scope restringido y requisitos de verificación aplicables.
+
+Llamadas: rol, número entrante disponible, normalización, caché local y respuesta dentro de cinco segundos. Sin red en el servicio, audio ni bloqueo automático. El número puede ser suplantado.
+
+Motor determinista y explicable; score heurístico, no probabilidad calibrada. Eventos mínimos sin contenido completo del correo. Backend futuro con RLS, claves públicas de cliente y sin secretos en APK. Notificaciones locales antes de cualquier push, sin avisos a contactos no autorizados.
+
+## 8. Aceptación de ETAPA 1.1
+
+- Compilación y pruebas unitarias/instrumentales pertinentes aprobadas.
+- Onboarding persistente, reanudable y ausente en el siguiente inicio completado.
+- Solo tres secciones, sin tarjetas de canales eliminados.
+- Resumen sin métricas fabricadas ni protección ficticia.
+- Contactos locales múltiples con validación, eliminación y apertura del marcador.
+- Cinco lecciones propias con enlaces oficiales y progreso local.
+- Fuente escalable, contraste, controles accesibles y errores de guardado manejados.
+- Documentar límites de llamadas, ausencia de integraciones, pruebas físicas y TalkBack pendientes.
+
+No iniciar las integraciones siguientes, hacer commits ni push durante esta etapa.

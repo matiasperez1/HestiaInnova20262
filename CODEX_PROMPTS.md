@@ -1,91 +1,29 @@
-# CODEX_PROMPTS.md — Plan de implementación de Hestia
+# CODEX_PROMPTS.md — Hestia
 
-## Instrucciones generales
+Leer AGENTS.md y MVP_SPEC.md completos antes de cada etapa. Trabajar en una etapa a la vez, compilar y probar. No avanzar automáticamente, inventar credenciales, simular permisos o hacer commits/push sin autorización.
 
-Leer `AGENTS.md` y `MVP_SPEC.md` antes de cada etapa.
-Trabajar en una etapa a la vez. No avanzar automáticamente.
-Después de cada etapa, compilar y ejecutar las pruebas disponibles.
-No inventar credenciales ni presentar datos simulados como reales.
+Identidad definitiva: **Hestia**, `cl.grupo28.hestia`. Conservar configuración técnica. Las etapas 0, 0.5 y 0.6 establecieron la base. El diseño inicial de ETAPA 1 queda reemplazado por la simplificación de ETAPA 1.1; no restaurar la navegación anterior.
 
-Nombre oficial del producto y del proyecto Gradle: **Hestia**.
-Namespace, application ID y paquete Kotlin definitivos: `cl.grupo28.hestia`.
-Mantener antifraude como descripción del propósito y las funcionalidades.
+## ETAPA 1.1 — Simplificación
 
----
+> Lee los documentos y revisa el estado del repositorio. Deja solo Resumen, Aprender y Familia. Resumen será el inicio tras un onboarding persistido y reanudable con DataStore. Prepara siete pasos breves de bienvenida, cuenta Google, Gmail, llamadas, agenda opcional, notificaciones y finalización. No implementes aún autenticación, OAuth, servicio de llamadas, permisos ni eventos ficticios; deja acciones pendientes y permite continuar. El resumen utiliza solo eventos reales y muestra ausencia de datos si no hay fuente. Familia permite agregar/eliminar varios contactos locales y abrir el marcador sin acceso a agenda. Crea cinco lecciones propias basadas en CMF, SERNAC, ChileAtiende y Ley 20.009, con preguntas y fuentes. Reduce texto y pantallas. Actualiza documentación, compila y prueba persistencia, navegación y accesibilidad. Entrega capturas de las tres secciones. No comiences integraciones ni hagas commits/push.
 
-## ETAPA 0 — Inspección y plan
+## ETAPA 2 — Cuenta y Gmail (solo con autorización posterior)
 
-Usar `/plan` con este prompt:
+> Conecta Supabase Auth con Google y OAuth Gmail independiente de solo lectura. Verifica credenciales, errores, cancelaciones y revocación con cuentas autorizadas. Configura RLS y almacenamiento seguro de tokens. Sin cuerpos de correo en backend ni secretos administrativos en APK. Sincronización manual y análisis local determinista. Activar estados únicamente tras comprobar la conexión real.
 
-> Lee AGENTS.md, MVP_SPEC.md y CODEX_PROMPTS.md. Inspecciona el repositorio sin modificarlo. Revisa Gradle, JDK, SDK, package name, dependencias y estructura. Prepara un plan por etapas para implementar el MVP. Identifica riesgos técnicos y credenciales externas necesarias, especialmente Gmail OAuth, SMS y CallScreeningService. No escribas código todavía.
+## ETAPA 3 — Identificación de llamadas (solo con autorización posterior)
 
-## ETAPA 0.5 — Identidad y preparación técnica
+> Implementa CallScreeningService y ROLE_CALL_SCREENING mediante RoleManager. Mantén el marcador habitual. Caché local y respuesta dentro del plazo Android, sin red ni audio ni bloqueo automático. READ_CONTACTS solo opcional si se necesita incluir números guardados; nunca READ_CALL_LOG. Documenta números privados/restringidos y que el registro no es el historial completo. Prueba en dispositivo físico.
 
-> Lee completos AGENTS.md, MVP_SPEC.md y CODEX_PROMPTS.md. Establece Hestia como nombre visible y nombre del proyecto Gradle; migra namespace, application ID, paquetes Kotlin y pruebas a cl.grupo28.hestia, incluidos directorios, imports, tema y documentación. Conserva la carpeta física y el repositorio. Comprueba el JDK 25 de Gradle y documenta la configuración local de terminal sin guardar rutas del computador ni modificar variables globales. Investiga lint sin actualizar dependencias solo para eliminar advertencias. Conserva AGP, Gradle, SDK y soporte Kotlin integrado. Ejecuta clean, assembleDebug, testDebugUnitTest, lintDebug y connectedDebugAndroidTest si hay emulador. No agregues funcionalidades, permisos ni integraciones. Reporta cambios, resultados y limitaciones; no hagas commit ni push.
+## ETAPA 4 — Eventos y notificaciones
 
-## ETAPA 0.6 — Identidad definitiva de Hestia
+> Conecta fuentes reales al resumen semanal y sus estados de disponibilidad. Distingue registro, detección y revisión; deduplica y respeta límites de semana/zona horaria. Implementa avisos locales y permisos reales. Push y compartir con terceros solo con autorización separada y consentimiento explícito. No afirmar estafas evitadas.
 
-> Lee AGENTS.md, MVP_SPEC.md y CODEX_PROMPTS.md. Establece Hestia como nombre comercial, nombre visible y nombre del proyecto Gradle. Migra namespace, application ID, paquetes Kotlin, directorios, imports, tema y pruebas a cl.grupo28.hestia. Actualiza la documentación y la orientación de marca: protección, hogar, familia y tranquilidad, con inspiración mitológica sutil y contemporánea. Verifica ausencia de nombres y paquetes temporales en fuentes y documentos. Mantén AGP 9.5.1, Gradle 9.6.0, JDK 25, Kotlin, SDK y dependencias actuales. No cambies la carpeta física ni el repositorio. Ejecuta clean, assembleDebug, testDebugUnitTest, lintDebug y pruebas instrumentales si hay emulador. No implementes funcionalidades ni comiences la ETAPA 1. No hagas commit ni push.
+## ETAPA 5 — QA y distribución
 
-## ETAPA 1 — Diseño visual y navegación
+> Comprueba onboarding, permisos reales y denegados, sincronización, resumen, contactos, fuentes educativas, desconexión, accesibilidad y privacidad. Ejecuta pruebas, genera APK y separa probado, pendiente de credenciales y no probado físicamente. No publicar ni hacer commit/push sin autorización.
 
-> Implementa únicamente la etapa de diseño. Configura Jetpack Compose y Material 3 con una identidad visual propia basada en AGENTS.md. Construye navegación principal, dashboard, pantallas vacías/placeholder claramente identificadas, componentes reutilizables y menú de accesibilidad inicial. Prioriza una interfaz moderna, cálida, despejada y apta para adultos mayores. No implementes integraciones externas ni simules datos reales. Compila y reporta archivos modificados.
+## Fuera del plan
 
-Pantallas:
-- Bienvenida.
-- Inicio.
-- Protección.
-- Educación.
-- Contacto de confianza.
-- Ajustes y accesibilidad.
-
-Componentes:
-- PrimaryButton.
-- SecondaryButton.
-- RiskBadge con texto además de color.
-- ProtectionStatusCard.
-- SecurityAlertCard.
-- SectionHeader.
-- EmptyState.
-- ErrorState.
-- LoadingState.
-
-## ETAPA 2 — Onboarding y accesibilidad
-
-> Implementa el onboarding como un asistente paso a paso. Incluye login Google (si las credenciales aún no existen, crea la interfaz y documenta la configuración, sin simular autenticación real), autorización Gmail separada, rol de identificación de llamadas, permiso de notificaciones y permiso SMS opcional. Cada pantalla explica el propósito antes de abrir el flujo oficial de autorización. Verifica el estado real al volver. El usuario puede continuar sin permisos opcionales. Implementa preferencias DataStore: tamaño de texto, alto contraste, lectura en voz alta, interfaz simplificada y reducción de animaciones. No solicites permisos de contactos, micrófono, ubicación, READ_SMS ni accesibilidad del sistema. Añade pruebas de estados de permisos y compila.
-
-## ETAPA 3 — Motor antifraude y educación
-
-> Implementa analizadores deterministas separados para email, SMS, mensajes compartidos y números telefónicos. Define modelos de riesgo, códigos de motivos y recomendaciones. La puntuación es heurística, no una probabilidad calibrada. Crea pruebas unitarias con casos legítimos y fraudulentos. Implementa seis lecciones educativas con explicaciones y preguntas interactivas. Incluye el flujo “Creo que estoy siendo víctima de una estafa”. No utilices un LLM como dependencia obligatoria. Compila y reporta resultados de pruebas.
-
-## ETAPA 4 — SMS Android
-
-> Implementa el receptor de SMS entrantes mediante Telephony.Sms.Intents.SMS_RECEIVED_ACTION. Declara RECEIVE_SMS y solicita el permiso en runtime. Procesa solo mensajes nuevos, reconstruye multipartes, analiza localmente con SmsRiskAnalyzer y registra metadatos mínimos. No solicites READ_SMS, no leas historial, no envíes el cuerpo al backend y no hagas red desde BroadcastReceiver. El análisis debe ser breve; usa WorkManager solo para trabajo diferido no crítico. Mantén análisis manual si se deniega el permiso. Documenta que APK sideload no equivale a aprobación de Google Play. Añade pruebas y pasos de prueba física.
-
-## ETAPA 5 — Identificación de llamadas
-
-> Implementa CallScreeningService y solicitud de ROLE_CALL_SCREENING. Consulta exclusivamente una caché local de números normalizados. Responde dentro del plazo de Android. No hagas llamadas de red en el servicio. No grabes, escuches ni transcribas llamadas. No bloquees automáticamente. Registra eventos mínimos y muestra información al usuario mediante mecanismos compatibles (por ejemplo, notificación cuando corresponda), sin asumir que se puede dibujar sobre cualquier dialer. Documenta la limitación de números guardados en contactos cuando no se solicita READ_CONTACTS. Prueba en dispositivo físico.
-
-## ETAPA 6 — Mensajes compartidos y Gmail
-
-> Implementa recepción de texto compartido mediante ACTION_SEND/text/plain para SMS y WhatsApp. El usuario debe iniciar el compartir; no leer WhatsApp automáticamente. Implementa GmailRepository y OAuth de Gmail separado del login Google. Consulta correos recientes autorizados, extrae encabezados y enlaces disponibles y ejecuta EmailRiskAnalyzer. Empieza con sincronización manual. No guardes cuerpos completos en backend. Si faltan credenciales Google Cloud, deja interfaces y documentación de configuración, no datos falsos. Documenta el scope restringido gmail.readonly y requisitos de verificación. Compila y prueba con cuenta autorizada.
-
-## ETAPA 7 — Supabase y contactos de confianza
-
-> Implementa esquema/migraciones y repositorios Supabase para perfiles, invitaciones, relaciones, dominios oficiales, reportes y eventos. Implementa RLS. Crea flujo de invitación mediante código con expiración y aceptación explícita. El adulto mayor elige qué eventos comparte. No pidas acceso a agenda/contactos. Nunca incluyas service_role en APK. Si falta configuración, documenta variables necesarias y no simules sincronización real.
-
-## ETAPA 8 — Notificaciones y resumen
-
-> Implementa primero notificaciones locales y bandeja de incidentes. Si Firebase está configurado, integra FCM para avisos autorizados al contacto de confianza. Calcula resumen semanal desde eventos reales. Diferencia amenazas detectadas de estafas evitadas. Maneja ausencia de conexión y permisos denegados. Compila y prueba.
-
-## ETAPA 9 — QA y APK
-
-> Revisa MVP_SPEC.md y realiza auditoría funcional. Ejecuta pruebas unitarias, compila, revisa permisos del manifest, estados sin conexión, accesibilidad, navegación y privacidad. Comprueba que no existan llamadas de audio, READ_SMS, lectura automática de WhatsApp ni secretos en el APK. Genera APK debug, entrega instrucciones de instalación y un informe que separe: implementado y probado, implementado pero no probado, pendiente por credenciales y fuera de alcance. No declares terminada una integración que no hayas verificado.
-
----
-
-## Prompt inicial recomendado
-
-Después de abrir el proyecto Android en VS Code:
-
-> Lee AGENTS.md, MVP_SPEC.md y CODEX_PROMPTS.md. Inspecciona el proyecto y utiliza la ETAPA 0 para proponer el plan. No modifiques archivos todavía. Quiero revisar el plan y los riesgos antes de comenzar a implementar.
+No implementar SMS, integración de conversaciones de WhatsApp, pantalla independiente de Protección, acceso al audio celular, bloqueo automático ni control remoto. WhatsApp queda únicamente como temática educativa.

@@ -12,6 +12,14 @@ navigationCompose = "2.9.4"
 datastore = "1.1.7"
 
 [libraries]
+mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version = "4.12.0" }
+json-test = { module = "org.json:json", version = "20240303" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version = "1.8.1" }
+androidx-credentials = { module = "androidx.credentials:credentials", version = "1.5.0" }
+androidx-credentials-google = { module = "androidx.credentials:credentials-play-services-auth", version = "1.5.0" }
+google-id = { module = "com.google.android.libraries.identity.googleid:googleid", version = "1.1.1" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version = "4.12.0" }
+
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

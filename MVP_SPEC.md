@@ -19,7 +19,7 @@ Solo tres pestañas: **Resumen, Aprender, Familia**. Ajustes desde Resumen. Sin 
 Guardar el avance y finalización del onboarding en DataStore. Tras completarlo, el siguiente inicio abre Resumen. Si se interrumpe, volver al último paso. Indicador de progreso y una pantalla por paso:
 
 1. «Bienvenido a Hestia»: «Te ayudamos a identificar llamadas y correos sospechosos». Botón Comenzar.
-2. Google: autenticación futura mediante Supabase Auth para identificar al usuario. No equivale a permiso Gmail.
+2. Google: autenticación mediante Supabase Auth cuando está configurada para identificar al usuario. No equivale a permiso Gmail.
 3. Gmail: «Hestia revisará tus correos para identificar posibles estafas». OAuth independiente y solo lectura.
 4. Llamadas: «Hestia puede identificar números sospechosos antes de que contestes». Rol ROLE_CALL_SCREENING mediante RoleManager junto con servicio real; el marcador habitual sigue atendiendo llamadas.
 5. Agenda: READ_CONTACTS opcional solo para incluir llamadas de números guardados; no para gestionar contactos de emergencia. Sin READ_CALL_LOG.
@@ -30,7 +30,7 @@ Guardar el avance y finalización del onboarding en DataStore. Tras completarlo,
 
 ## 4. Resumen semanal
 
-Pantalla principal: semana actual y tres tarjetas simples, sin gráficos innecesarios:
+Pantalla principal: semana actual y tarjetas simples, separando llamadas y correos, sin gráficos innecesarios:
 
 - Estado general: solo conexiones reales.
 - Llamadas registradas por Hestia y sospechosas; correos analizados y sospechosos.
@@ -88,3 +88,10 @@ Motor determinista y explicable; score heurístico, no probabilidad calibrada. E
 - Documentar límites de llamadas, ausencia de integraciones, pruebas físicas y TalkBack pendientes.
 
 No iniciar las integraciones siguientes, hacer commits ni push durante esta etapa.
+
+
+## 9. ETAPA 2A — Cuenta Google
+
+Cuenta opcional con Credential Manager y Supabase Auth; no conecta Gmail ni activa protecciones. Acceso desde onboarding y Ajustes, recuperación/verificación de sesión, renovación y cierre confirmado. Sin configuración externa válida, deshabilitar el acceso e informar que no está disponible. Sesión cifrada en Android Keystore/noBackupFilesDir. Cancelación, falta de cuentas, red caída, credenciales revocadas y errores de almacenamiento requieren estados comprensibles sin exponer datos del proveedor.
+
+Sin sincronizar contactos/lecciones ni crear tablas: permanecen locales, incluso al cambiar de cuenta. Solo permiso INTERNET, sin permisos de ejecución. Gmail pertenece a 2B. Aceptación: compilación, pruebas de repositorio/transporte/UI/cifrado y prueba real con cuenta autorizada y usuario verificado en Supabase. La última comprobación permanece pendiente mientras no se configuren proyectos externos. No declarar integración terminada basándose únicamente en dobles de prueba.

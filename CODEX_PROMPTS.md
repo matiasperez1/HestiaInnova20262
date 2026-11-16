@@ -8,9 +8,13 @@ Identidad definitiva: **Hestia**, `cl.grupo28.hestia`. Conservar configuración 
 
 > Lee los documentos y revisa el estado del repositorio. Deja solo Resumen, Aprender y Familia. Resumen será el inicio tras un onboarding persistido y reanudable con DataStore. Prepara siete pasos breves de bienvenida, cuenta Google, Gmail, llamadas, agenda opcional, notificaciones y finalización. No implementes aún autenticación, OAuth, servicio de llamadas, permisos ni eventos ficticios; deja acciones pendientes y permite continuar. El resumen utiliza solo eventos reales y muestra ausencia de datos si no hay fuente. Familia permite agregar/eliminar varios contactos locales y abrir el marcador sin acceso a agenda. Crea cinco lecciones propias basadas en CMF, SERNAC, ChileAtiende y Ley 20.009, con preguntas y fuentes. Reduce texto y pantallas. Actualiza documentación, compila y prueba persistencia, navegación y accesibilidad. Entrega capturas de las tres secciones. No comiences integraciones ni hagas commits/push.
 
-## ETAPA 2 — Cuenta y Gmail (solo con autorización posterior)
+## ETAPA 2A — Cuenta Google (etapa autorizada)
 
-> Conecta Supabase Auth con Google y OAuth Gmail independiente de solo lectura. Verifica credenciales, errores, cancelaciones y revocación con cuentas autorizadas. Configura RLS y almacenamiento seguro de tokens. Sin cuerpos de correo en backend ni secretos administrativos en APK. Sincronización manual y análisis local determinista. Activar estados únicamente tras comprobar la conexión real.
+> Implementar cuenta opcional mediante Credential Manager y Supabase Auth con ID token y nonce, sesión cifrada con Keystore, restauración/renovación y cierre de sesión. Configuración local pública sin secretos administrativos en APK. Conservar datos locales al cerrar sesión. Guiar creación de proyectos de prueba con Gmail personales, sin publicación. Verificar errores, cancelaciones, revocación y cuenta real en Supabase. No declarar terminada la conexión sin credenciales y pruebas reales. No conectar Gmail ni crear tablas propias en esta entrega. Ver docs/ETAPA_2A_AUTH.md.
+
+## ETAPA 2B — Gmail (requiere autorización posterior)
+
+> Implementar OAuth Gmail independiente de solo lectura. Configurar cuentas autorizadas y scopes restringidos, verificar errores, cancelaciones y revocación. Sin cuerpos de correo en backend ni secretos administrativos en APK. Sincronización manual y análisis local determinista. Activar estados únicamente tras comprobar la conexión real. RLS obligatorio si se incorporan tablas expuestas.
 
 ## ETAPA 3 — Identificación de llamadas (solo con autorización posterior)
 

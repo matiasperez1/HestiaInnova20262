@@ -10,11 +10,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import cl.grupo28.hestia.core.accessibility.*
+import cl.grupo28.hestia.domain.auth.AuthState
+import cl.grupo28.hestia.features.account.AccountCard
 import cl.grupo28.hestia.core.components.*
 
 @Composable
-fun SettingsScreen(preferences: DisplayPreferences, saving: Boolean, onChange: (DisplayPreferences) -> Unit) {
+fun SettingsScreen(preferences: DisplayPreferences, saving: Boolean, onChange: (DisplayPreferences) -> Unit, account: AuthState, onSignIn: () -> Unit, onSignOut: () -> Unit, onRetryAccount: () -> Unit) {
     Page("Ajustes", "Hestia, a tu manera.") {
+        AccountCard(account, onSignIn, onSignOut, onRetryAccount)
         HestiaCard {
             Text("Protecciones", style = MaterialTheme.typography.titleLarge)
             Text("Gmail · Sin conectar", style = MaterialTheme.typography.bodyLarge)

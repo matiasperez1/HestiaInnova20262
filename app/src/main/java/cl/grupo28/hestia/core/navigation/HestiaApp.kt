@@ -1,6 +1,7 @@
 package cl.grupo28.hestia.core.navigation
 
 import android.content.Intent
+import cl.grupo28.hestia.features.account.AccountViewModel
 import androidx.core.net.toUri
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.EnterTransition
@@ -42,20 +43,22 @@ private val destinations = listOf(
 )
 
 @Composable
-fun HestiaApp(viewModel: HestiaViewModel) {
+fun HestiaApp(viewModel: HestiaViewModel, accountViewModel: AccountViewModel) {
     val state by viewModel.state.collectAsState()
+    val account by accountViewModel.state.collectAsState()
+    val context = LocalContext.current
     HestiaTheme(state.settings.display) {
         if (state.loading) {
             Surface(Modifier.fillMaxSize()) { Box(Modifier.systemBarsPadding(), contentAlignment = Alignment.Center) { LoadingState("Abriendo Hestia…") } }
         } else if (!state.ready) {
             Surface(Modifier.fillMaxSize()) { Box(Modifier.systemBarsPadding().padding(24.dp), contentAlignment = Alignment.Center) { ErrorState(state.error ?: "No pudimos abrir Hestia.", viewModel::reload) } }
         } else if (!state.settings.onboardingComplete) {
-            BackHandler(state.settings.onboardingStep > 0 && !state.saving) { viewModel.previousOnboarding() }
+            BackHandler(state.settings.onboardingStep > 0 && !state.saving && !account.busy) { viewModel.previousOnboarding() }
             Scaffold(topBar = { BrandHeader() }) { padding ->
-                Box(Modifier.padding(padding)) { OnboardingScreen(state.settings.onboardingStep, state.saving, viewModel::advanceOnboarding, viewModel::previousOnboarding) }
+                Box(Modifier.padding(padding)) { OnboardingScreen(state.settings.onboardingStep, state.saving, viewModel::advanceOnboarding, viewModel::previousOnboarding, account, { accountViewModel.signIn(context) }, accountViewModel::signOut, accountViewModel::retry) }
             }
         } else {
-            MainNavigation(viewModel)
+            MainNavigation(viewModel, accountViewModel)
         }
         if (state.ready && state.error != null) AlertDialog(onDismissRequest = viewModel::clearError,
             title = { Text("Revisemos este paso") }, text = { Text(state.error!!) },
@@ -77,8 +80,9 @@ private fun BrandHeader(back: (() -> Unit)? = null, settings: (() -> Unit)? = nu
 }
 
 @Composable
-private fun MainNavigation(viewModel: HestiaViewModel) {
+private fun MainNavigation(viewModel: HestiaViewModel, accountViewModel: AccountViewModel) {
     val state by viewModel.state.collectAsState()
+    val account by accountViewModel.state.collectAsState()
     val nav = rememberNavController()
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: "summary"
@@ -116,7 +120,7 @@ private fun MainNavigation(viewModel: HestiaViewModel) {
                     openExternal(context, dialIntent(it.phone), viewModel::showError)
                 }
             }
-            composable("settings") { SettingsScreen(state.settings.display, state.saving, viewModel::setDisplay) }
+            composable("settings") { SettingsScreen(state.settings.display, state.saving, viewModel::setDisplay, account, { accountViewModel.signIn(context) }, accountViewModel::signOut, accountViewModel::retry) }
             composable("lesson/{id}", arguments = listOf(navArgument("id") { type = NavType.IntType })) { backStack ->
                 val lesson = lessons.firstOrNull { it.id == backStack.arguments?.getInt("id") }
                 if (lesson == null) ErrorState("No encontramos esta lección.") { openMain("education") }

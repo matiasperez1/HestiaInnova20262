@@ -2,11 +2,13 @@
 
 Aplicación Android del Grupo 28 para adultos mayores: llamadas y correos sospechosos, resumen semanal y educación antifraude. Identidad: **Hestia**, `cl.grupo28.hestia`.
 
-## Experiencia actual — ETAPA 1.2
+## Experiencia actual — ETAPA 2A
 
 Solo tres secciones: **Resumen, Aprender y Familia**. Configuración inicial de siete pasos, persistida con DataStore y reanudable. Tras finalizar el recorrido se abre Resumen en los siguientes inicios.
 
-Google/Supabase Auth, Gmail OAuth, identificación de llamadas y avisos siguen pendientes. Sus acciones aparecen no disponibles y el usuario puede continuar sin activarlas. Completar el asistente no concede permisos ni conecta protecciones. No se solicitan permisos Android en esta etapa.
+Cuenta Google mediante Credential Manager y Supabase Auth implementada para configuración y pruebas. Los proyectos externos aún deben crearse y la conexión real no está validada. Sin configuración pública válida el acceso permanece deshabilitado; siempre se puede continuar sin cuenta. Ver [guía ETAPA 2A](docs/ETAPA_2A_AUTH.md) y `secrets.properties.example`.
+
+Gmail OAuth, identificación de llamadas y avisos siguen pendientes. Completar el asistente o iniciar sesión no activa protecciones. Solo se agrega INTERNET, sin permisos Android de ejecución. La sesión se cifra con Android Keystore y se excluye de backups. Al cerrar sesión se conservan los datos locales del teléfono.
 
 Resumen muestra la semana y campos sin datos («Sin datos»); no hay fuentes reales conectadas. Incluye un cálculo de dominio probado para eventos futuros, sin generar ni sincronizar eventos de demostración. El conteo futuro será de llamadas registradas por Hestia, no de todo el historial telefónico: la recepción de contactos requiere READ_CONTACTS y números privados/restringidos pueden quedar fuera. No se solicita READ_CALL_LOG.
 
@@ -18,7 +20,9 @@ WhatsApp es solo temática educativa. No hay funciones de análisis de mensajes 
 
 Kotlin, Compose/Material 3, Navigation Compose, ViewModel/StateFlow y repositorio DataStore. `features/summary`, `education` y `family`; `onboarding` y `settings` para configuración; `core`, `domain` y `data` para lógica compartida.
 
-Única dependencia directa nueva de ETAPA 1.1: DataStore Preferences **1.1.7**. Se mantienen Navigation Compose 2.9.4, Espresso 3.7.0 (pruebas), AGP 9.5.1, Gradle 9.6.0, Kotlin/Compose plugin 2.2.10, compileSdk/targetSdk 37 y minSdk 29.
+Dependencia directa incorporada en ETAPA 1.1: DataStore Preferences **1.1.7**. Se mantienen Navigation Compose 2.9.4, Espresso 3.7.0 (pruebas), AGP 9.5.1, Gradle 9.6.0, Kotlin/Compose plugin 2.2.10, compileSdk/targetSdk 37 y minSdk 29.
+
+Autenticación 2A agrega Credential Manager 1.5.0, su proveedor Google, Google ID 1.1.1 y OkHttp 4.12.0. Las pruebas usan coroutines-test 1.8.1, MockWebServer 4.12.0 y JSON 20240303. Supabase se consume mediante su API Auth REST, sin módulos de datos adicionales ni cambios de Kotlin. No se solicitan scopes Gmail.
 
 ## Java y validación
 

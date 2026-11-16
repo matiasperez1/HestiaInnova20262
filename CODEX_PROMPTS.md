@@ -12,9 +12,11 @@ Identidad definitiva: **Hestia**, `cl.grupo28.hestia`. Conservar configuración 
 
 > Implementar cuenta opcional mediante Credential Manager y Supabase Auth con ID token y nonce, sesión cifrada con Keystore, restauración/renovación y cierre de sesión. Configuración local pública sin secretos administrativos en APK. Conservar datos locales al cerrar sesión. Guiar creación de proyectos de prueba con Gmail personales, sin publicación. Verificar errores, cancelaciones, revocación y cuenta real en Supabase. No declarar terminada la conexión sin credenciales y pruebas reales. No conectar Gmail ni crear tablas propias en esta entrega. Ver docs/ETAPA_2A_AUTH.md.
 
-## ETAPA 2B — Gmail (requiere autorización posterior)
+## ETAPA 2B — Gmail (etapa autorizada)
 
 > Implementar OAuth Gmail independiente de solo lectura. Configurar cuentas autorizadas y scopes restringidos, verificar errores, cancelaciones y revocación. Sin cuerpos de correo en backend ni secretos administrativos en APK. Sincronización manual y análisis local determinista. Activar estados únicamente tras comprobar la conexión real. RLS obligatorio si se incorporan tablas expuestas.
+
+La implementación y configuración de pruebas de 2B se documentan en docs/ETAPA_2B_GMAIL.md. No ejecutar la ETAPA 3 ni el sistema general de eventos/notificaciones de 4 por esta autorización.
 
 ## ETAPA 3 — Identificación de llamadas (solo con autorización posterior)
 

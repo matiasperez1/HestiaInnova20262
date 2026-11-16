@@ -63,6 +63,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.google.authorization)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.google)
     implementation(libs.google.id)

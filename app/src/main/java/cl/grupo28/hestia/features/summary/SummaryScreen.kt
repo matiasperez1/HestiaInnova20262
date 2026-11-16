@@ -10,19 +10,21 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import cl.grupo28.hestia.core.components.*
 import cl.grupo28.hestia.domain.*
+import cl.grupo28.hestia.features.gmail.GmailUiState
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
-fun SummaryScreen(week: WeekRange, summary: WeeklySummary?) {
+fun SummaryScreen(week: WeekRange, summary: WeeklySummary?, gmail: GmailUiState, onOpenGmail: () -> Unit) {
+    val emailSnapshot = gmail.snapshot?.takeIf { it.week == week }
     val date = DateTimeFormatter.ofPattern("d MMM", Locale.forLanguageTag("es-CL"))
     Page("Tu semana", "${week.start.format(date)} — ${week.end.format(date)}") {
         HestiaCard(color = MaterialTheme.colorScheme.tertiaryContainer) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 HestiaIcon(HestiaSymbol.CLOCK)
-                Text("Protección pendiente", style = MaterialTheme.typography.titleMedium)
+                Text(if (gmail.verified) "Revisión manual de correos" else "Protección pendiente", style = MaterialTheme.typography.titleMedium)
             }
-            Text("Correos y llamadas aún sin conectar", style = MaterialTheme.typography.bodyMedium)
+            Text(if (gmail.verified) "Gmail disponible. Llamadas aún sin configurar." else "Gmail sin verificar. Llamadas aún sin configurar.", style = MaterialTheme.typography.bodyMedium)
         }
         HestiaCard {
             MetricHeading("Llamadas", HestiaSymbol.PHONE)
@@ -34,9 +36,12 @@ fun SummaryScreen(week: WeekRange, summary: WeeklySummary?) {
         HestiaCard {
             MetricHeading("Correos", HestiaSymbol.MAIL)
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Metric(summary?.analyzedEmails, "Analizados", Modifier.weight(1f))
-                Metric(summary?.suspiciousEmails, "Sospechosos", Modifier.weight(1f))
+                Metric(emailSnapshot?.records?.size ?: summary?.analyzedEmails, "Analizados", Modifier.weight(1f))
+                Metric(emailSnapshot?.suspicious ?: summary?.suspiciousEmails, "Sospechosos", Modifier.weight(1f))
             }
+            if (emailSnapshot != null) Text("Resultado de la última revisión manual de esta semana.", style = MaterialTheme.typography.bodyMedium)
+            if (emailSnapshot?.partial == true) Text("Resultado parcial.", style = MaterialTheme.typography.bodyMedium)
+            SecondaryButton("Revisar correos", onOpenGmail)
         }
         HestiaCard {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -44,7 +49,7 @@ fun SummaryScreen(week: WeekRange, summary: WeeklySummary?) {
                 Text("Alertas revisadas por ti", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
             }
         }
-        if (summary == null) Text("Aún no hay datos para esta semana.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (summary == null && emailSnapshot == null) Text("Aún no hay datos para esta semana.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

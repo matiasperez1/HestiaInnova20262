@@ -96,3 +96,8 @@ Comandos de validación: `assembleDebug`, `testDebugUnitTest`, `connectedDebugAn
 Las primeras ejecuciones detectaron una referencia URI del script Gradle y un selector de prueba de Compose incompatibles; ambos se corrigieron y la ejecución final completa pasó. Los logs locales están en `build/stage2a-final.log`; los informes de JUnit, instrumentación y lint permanecen en `app/build`.
 
 Pendiente: crear/configurar los dos proyectos externos, probar una cuenta Google autorizada y corroborar su usuario/sesión en Supabase; cancelación real del selector, ausencia real de cuentas y revocación real; auditoría auditiva con TalkBack y dispositivos físicos Android 10+. La ETAPA 2A no se declara validada de extremo a extremo mientras falten esas pruebas. No se realizaron commits, push ni publicación.
+
+
+## Actualización al iniciar 2B
+
+Los proyectos de Supabase y Google Auth ya se configuraron. Se comprobó que Supabase responde con Google habilitado, que la configuración compilada coincide con la local y que Hestia muestra una sesión restaurada/verificada tras apertura en frío. Esta evidencia reemplaza el pendiente de crear proyectos de las notas históricas. Cierre, revocación, cancelación reales y auditoría completa siguen separados de esa comprobación. Gmail tiene autorización y configuración independientes, documentadas en ETAPA_2B_GMAIL.md.

@@ -37,7 +37,7 @@ Sans serif nativa: pantalla 28–32 sp, tarjetas 20–22 sp, cuerpo 18 sp, secun
 
 Conservar AGP 9.5.1, Gradle 9.6.0, JDK 25, Kotlin integrado de AGP 9, compileSdk/targetSdk 37 y minSdk 29. Sin actualizaciones masivas ni rutas locales compartidas.
 
-Kotlin, Compose, Material 3, Navigation Compose, ViewModel/StateFlow y DataStore. Room/WorkManager solo cuando una función real lo requiera. ETAPA 2A incorpora cuenta Google mediante Credential Manager y Supabase Auth, pendiente de validación con proyectos y cuentas reales. PostgreSQL de aplicación, Gmail API y servicios de llamadas siguen siendo integraciones futuras.
+Kotlin, Compose, Material 3, Navigation Compose, ViewModel/StateFlow y DataStore. Room/WorkManager solo cuando una función real lo requiera. ETAPA 2A incorpora cuenta Google mediante Credential Manager y Supabase Auth; se verificó una sesión real restaurada. ETAPA 2B incorpora autorización Gmail y revisión manual local, pendiente de configurar Gmail API/scope y probar el buzón real. PostgreSQL de aplicación y llamadas siguen siendo integraciones futuras.
 
 - `core`: tema, componentes, accesibilidad, navegación y estado compartido.
 - `features/summary`, `education`, `family`: las tres funciones principales.
@@ -53,7 +53,7 @@ Guardar con DataStore el último paso y su finalización. No repetirlo al abrir 
 
 Pasos: bienvenida, Google mediante Supabase Auth, autorización Gmail independiente, identificación de llamadas, agenda opcional para llamadas, notificaciones y finalización.
 
-En ETAPA 2A solo el paso Google puede iniciar una conexión real cuando existe configuración pública válida. Se puede continuar sin cuenta. Gmail, llamadas, agenda y notificaciones continúan pendientes. En etapas posteriores:
+En ETAPA 2B Google y Gmail son conexiones independientes. Se puede continuar sin cuenta o sin Gmail. Gmail requiere consentimiento nativo gmail.readonly y comprobación real del perfil antes de mostrar conexión verificada; llamadas, agenda y notificaciones continúan pendientes. En etapas posteriores:
 
 - Separar autenticación de Google y OAuth Gmail de solo lectura. Nunca pedir acceso para modificar, eliminar o enviar correos.
 - Solicitar `ROLE_CALL_SCREENING` con RoleManager solo junto con un servicio funcional. No sustituir la aplicación telefónica habitual.
@@ -88,3 +88,10 @@ Compila, tiene pruebas adecuadas, errores y estados reales, interfaz accesible y
 ## Cuenta — ETAPA 2A
 
 Mantener login Google separado de Gmail. Solicitar solo identidad básica con Credential Manager; intercambio de ID token y nonce validado en Supabase Auth. Nunca mostrar como autenticada una identidad obtenida solo del selector. Tokens cifrados con Android Keystore en noBackupFilesDir; sin logs ni secretos administrativos en APK. Cierre local incluso sin red, explicando si no se confirmó la revocación remota. Contactos, lecciones y preferencias siguen siendo locales al dispositivo y se conservan al cerrar/cambiar de cuenta. No crear tablas ni políticas RLS vacías. Ver docs/ETAPA_2A_AUTH.md para configurar y validar los servicios.
+
+
+## Gmail — ETAPA 2B
+
+Autorización incremental con AuthorizationClient y gmail.readonly, ligada a la cuenta de Hestia y verificada con users.getProfile. Sin tokens Gmail persistidos, client secret, autorización offline ni backend de correos. Revisión manual de INBOX/semana local, límite 200 mensajes y 10 páginas explícito; deduplicar y preservar resultados anteriores ante errores. Cuerpos solo en memoria; sin endpoints de adjuntos ni apertura de enlaces. Metadatos y resultados mínimos cifrados con Keystore/noBackupFilesDir, aislados por propietario y eliminados al desconectar/cambiar/cerrar cuenta.
+
+Mostrar resultados históricos como tales; nunca confundir cero con fuente no consultada, revisión parcial con cobertura completa ni Gmail con llamadas activas. Score heurístico interno, categorías y explicaciones sin porcentajes ni autenticidad garantizada. Google revokeAccess revoca todos los scopes de Hestia: explicarlo antes y distinguir desconexión local de revocación remota confirmada. Ver docs/ETAPA_2B_GMAIL.md. No ejecutar pruebas que desinstalen o borren datos del dispositivo con la sesión real sin un entorno de prueba separado.

@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import cl.grupo28.hestia.core.components.*
 import cl.grupo28.hestia.domain.auth.AuthState
 import cl.grupo28.hestia.features.account.AccountCard
+import cl.grupo28.hestia.features.gmail.*
 
 private data class SetupStep(val title: String, val text: String, val symbol: HestiaSymbol, val action: String? = null, val next: String = "Continuar")
 private val steps = listOf(
@@ -25,7 +26,7 @@ private val steps = listOf(
 )
 
 @Composable
-fun OnboardingScreen(step: Int, saving: Boolean, onNext: () -> Unit, onBack: () -> Unit, account: AuthState, onSignIn: () -> Unit, onSignOut: () -> Unit, onRetryAccount: () -> Unit) {
+fun OnboardingScreen(step: Int, saving: Boolean, onNext: () -> Unit, onBack: () -> Unit, account: AuthState, onSignIn: () -> Unit, onSignOut: () -> Unit, onRetryAccount: () -> Unit, gmail: GmailUiState, onConnectGmail: () -> Unit, onSyncGmail: () -> Unit, onDisconnectGmail: () -> Unit) {
     val page = steps[step]
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
         Text("Paso ${step + 1} de 7", style = MaterialTheme.typography.labelLarge)
@@ -34,19 +35,20 @@ fun OnboardingScreen(step: Int, saving: Boolean, onNext: () -> Unit, onBack: () 
         Text(page.title, style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
         Text(page.text, style = MaterialTheme.typography.bodyLarge)
         if (step == 6) HestiaCard {
-            Text("Correos: sin conectar", style = MaterialTheme.typography.bodyLarge)
+            Text(if (gmail.verified) "Correos: revisión manual disponible" else "Correos: sin conexión verificada", style = MaterialTheme.typography.bodyLarge)
             Text("Llamadas: sin configurar", style = MaterialTheme.typography.bodyLarge)
         }
         if (step == 1) AccountCard(account, onSignIn, onSignOut, onRetryAccount)
+        else if (step == 2) GmailPanel(gmail, onConnectGmail, onSyncGmail, onDisconnectGmail)
         else page.action?.let {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 PrimaryButton(it, {}, enabled = false)
                 Text("Disponible próximamente", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        if (step == 1 && account.account == null) {
-            SecondaryButton(if (saving) "Guardando…" else page.next, onNext, enabled = !saving && !account.busy)
-        } else PrimaryButton(if (saving) "Guardando…" else if (step == 1) "Continuar" else page.next, onNext, enabled = !saving && !account.busy)
+        if ((step == 1 && account.account == null) || (step == 2 && !gmail.verified)) {
+            SecondaryButton(if (saving) "Guardando…" else page.next, onNext, enabled = !saving && !account.busy && !gmail.busy)
+        } else PrimaryButton(if (saving) "Guardando…" else if (step == 1 || (step == 2 && gmail.verified)) "Continuar" else page.next, onNext, enabled = !saving && !account.busy)
         if (step > 0) TextButton(onBack, Modifier.heightIn(min = 48.dp), enabled = !saving && !account.busy) { Text("Atrás") }
     }
 }

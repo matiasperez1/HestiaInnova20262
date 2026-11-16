@@ -2,6 +2,7 @@ package cl.grupo28.hestia.core.navigation
 
 import android.content.Intent
 import cl.grupo28.hestia.features.account.AccountViewModel
+import cl.grupo28.hestia.features.gmail.*
 import androidx.core.net.toUri
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.EnterTransition
@@ -43,10 +44,11 @@ private val destinations = listOf(
 )
 
 @Composable
-fun HestiaApp(viewModel: HestiaViewModel, accountViewModel: AccountViewModel) {
+fun HestiaApp(viewModel: HestiaViewModel, accountViewModel: AccountViewModel, gmailViewModel: GmailViewModel, authorizeGmail: (String, String) -> Unit, revokeGmail: (String, (Boolean) -> Unit) -> Unit) {
     val state by viewModel.state.collectAsState()
     val account by accountViewModel.state.collectAsState()
     val context = LocalContext.current
+    val gmail by gmailViewModel.state.collectAsState()
     HestiaTheme(state.settings.display) {
         if (state.loading) {
             Surface(Modifier.fillMaxSize()) { Box(Modifier.systemBarsPadding(), contentAlignment = Alignment.Center) { LoadingState("Abriendo Hestia…") } }
@@ -55,10 +57,10 @@ fun HestiaApp(viewModel: HestiaViewModel, accountViewModel: AccountViewModel) {
         } else if (!state.settings.onboardingComplete) {
             BackHandler(state.settings.onboardingStep > 0 && !state.saving && !account.busy) { viewModel.previousOnboarding() }
             Scaffold(topBar = { BrandHeader() }) { padding ->
-                Box(Modifier.padding(padding)) { OnboardingScreen(state.settings.onboardingStep, state.saving, viewModel::advanceOnboarding, viewModel::previousOnboarding, account, { accountViewModel.signIn(context) }, accountViewModel::signOut, accountViewModel::retry) }
+                Box(Modifier.padding(padding)) { OnboardingScreen(state.settings.onboardingStep, state.saving, viewModel::advanceOnboarding, viewModel::previousOnboarding, account, { accountViewModel.signIn(context) }, accountViewModel::signOut, accountViewModel::retry, gmail, { gmailViewModel.begin(false, authorizeGmail) }, { gmailViewModel.begin(true, authorizeGmail) }, { gmailViewModel.disconnect(revokeGmail) }) }
             }
         } else {
-            MainNavigation(viewModel, accountViewModel)
+            MainNavigation(viewModel, accountViewModel, gmailViewModel, authorizeGmail, revokeGmail)
         }
         if (state.ready && state.error != null) AlertDialog(onDismissRequest = viewModel::clearError,
             title = { Text("Revisemos este paso") }, text = { Text(state.error!!) },
@@ -80,14 +82,15 @@ private fun BrandHeader(back: (() -> Unit)? = null, settings: (() -> Unit)? = nu
 }
 
 @Composable
-private fun MainNavigation(viewModel: HestiaViewModel, accountViewModel: AccountViewModel) {
+private fun MainNavigation(viewModel: HestiaViewModel, accountViewModel: AccountViewModel, gmailViewModel: GmailViewModel, authorizeGmail: (String, String) -> Unit, revokeGmail: (String, (Boolean) -> Unit) -> Unit) {
     val state by viewModel.state.collectAsState()
     val account by accountViewModel.state.collectAsState()
+    val gmail by gmailViewModel.state.collectAsState()
     val nav = rememberNavController()
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: "summary"
-    val selected = when { route.startsWith("lesson") -> "education"; route == "settings" -> "summary"; else -> route }
-    val detail = route == "settings" || route.startsWith("lesson")
+    val selected = when { route.startsWith("lesson") -> "education"; route == "settings" || route == "gmail" -> "summary"; else -> route }
+    val detail = route == "gmail" || route == "settings" || route.startsWith("lesson")
     val context = LocalContext.current
     fun openMain(target: String) { nav.navigate(target) { popUpTo("summary") { inclusive = target == "summary" }; launchSingleTop = true } }
     Scaffold(
@@ -113,14 +116,15 @@ private fun MainNavigation(viewModel: HestiaViewModel, accountViewModel: Account
         val noMotion = state.settings.display.reduceMotion
         NavHost(nav, startDestination = "summary", modifier = Modifier.padding(padding).consumeWindowInsets(padding),
             enterTransition = { if (noMotion) EnterTransition.None else fadeIn(tween(120)) }, exitTransition = { if (noMotion) ExitTransition.None else fadeOut(tween(80)) }) {
-            composable("summary") { SummaryScreen(WeekRange.current(), state.summary) }
+            composable("summary") { SummaryScreen(WeekRange.current(), state.summary, gmail) { nav.navigate("gmail") } }
             composable("education") { EducationScreen(state.settings.completedLessons) { nav.navigate("lesson/$it") } }
             composable("family") {
                 FamilyScreen(state.settings.contacts, state.saving, viewModel::addContact, viewModel::removeContact) {
                     openExternal(context, dialIntent(it.phone), viewModel::showError)
                 }
             }
-            composable("settings") { SettingsScreen(state.settings.display, state.saving, viewModel::setDisplay, account, { accountViewModel.signIn(context) }, accountViewModel::signOut, accountViewModel::retry) }
+            composable("settings") { SettingsScreen(state.settings.display, state.saving, viewModel::setDisplay, account, { accountViewModel.signIn(context) }, accountViewModel::signOut, accountViewModel::retry, gmail, { gmailViewModel.begin(false, authorizeGmail) }, { gmailViewModel.begin(true, authorizeGmail) }, { gmailViewModel.disconnect(revokeGmail) }, { nav.navigate("gmail") }) }
+            composable("gmail") { GmailScreen(gmail, { gmailViewModel.begin(false, authorizeGmail) }, { gmailViewModel.begin(true, authorizeGmail) }, { gmailViewModel.disconnect(revokeGmail) }) }
             composable("lesson/{id}", arguments = listOf(navArgument("id") { type = NavType.IntType })) { backStack ->
                 val lesson = lessons.firstOrNull { it.id == backStack.arguments?.getInt("id") }
                 if (lesson == null) ErrorState("No encontramos esta lección.") { openMain("education") }

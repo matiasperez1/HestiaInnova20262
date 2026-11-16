@@ -95,3 +95,10 @@ No iniciar las integraciones siguientes, hacer commits ni push durante esta etap
 Cuenta opcional con Credential Manager y Supabase Auth; no conecta Gmail ni activa protecciones. Acceso desde onboarding y Ajustes, recuperación/verificación de sesión, renovación y cierre confirmado. Sin configuración externa válida, deshabilitar el acceso e informar que no está disponible. Sesión cifrada en Android Keystore/noBackupFilesDir. Cancelación, falta de cuentas, red caída, credenciales revocadas y errores de almacenamiento requieren estados comprensibles sin exponer datos del proveedor.
 
 Sin sincronizar contactos/lecciones ni crear tablas: permanecen locales, incluso al cambiar de cuenta. Solo permiso INTERNET, sin permisos de ejecución. Gmail pertenece a 2B. Aceptación: compilación, pruebas de repositorio/transporte/UI/cifrado y prueba real con cuenta autorizada y usuario verificado en Supabase. La última comprobación permanece pendiente mientras no se configuren proyectos externos. No declarar integración terminada basándose únicamente en dobles de prueba.
+
+
+## 10. ETAPA 2B — Revisión Gmail
+
+Autorización independiente gmail.readonly con cuenta Google fijada y perfil Gmail verificado. Acceso desde onboarding, Ajustes y detalle Revisar correos bajo Resumen; se mantienen tres pestañas. Conectar no lee mensajes: revisar es una acción manual separada. Procesar INBOX de semana actual, con límites explícitos, reglas locales explicables y resultados persistidos cifrados. Sin cuerpos ni tokens Gmail en backend; sin envío/modificación/borrado, notificaciones, caché de adjuntos ni ejecución automática.
+
+Las cifras corresponden a la última revisión manual de esa semana; no al historial total ni a eventos acumulados. Cero exige consulta exitosa. Errores mantienen el resultado anterior con fecha/alcance visible; revocaciones y cuentas distintas no generan nueva conexión verificada. Desconectar confirma el alcance global de revokeAccess de Google y elimina resultados locales. La prueba real sigue pendiente mientras Gmail API/scope no estén configurados; no confundir tests con buzón real.

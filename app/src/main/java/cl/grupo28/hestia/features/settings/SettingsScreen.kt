@@ -12,15 +12,17 @@ import androidx.compose.ui.unit.dp
 import cl.grupo28.hestia.core.accessibility.*
 import cl.grupo28.hestia.domain.auth.AuthState
 import cl.grupo28.hestia.features.account.AccountCard
+import cl.grupo28.hestia.features.gmail.*
 import cl.grupo28.hestia.core.components.*
 
 @Composable
-fun SettingsScreen(preferences: DisplayPreferences, saving: Boolean, onChange: (DisplayPreferences) -> Unit, account: AuthState, onSignIn: () -> Unit, onSignOut: () -> Unit, onRetryAccount: () -> Unit) {
+fun SettingsScreen(preferences: DisplayPreferences, saving: Boolean, onChange: (DisplayPreferences) -> Unit, account: AuthState, onSignIn: () -> Unit, onSignOut: () -> Unit, onRetryAccount: () -> Unit, gmail: GmailUiState, onConnectGmail: () -> Unit, onSyncGmail: () -> Unit, onDisconnectGmail: () -> Unit, onOpenGmail: () -> Unit) {
     Page("Ajustes", "Hestia, a tu manera.") {
         AccountCard(account, onSignIn, onSignOut, onRetryAccount)
+        GmailPanel(gmail, onConnectGmail, onSyncGmail, onDisconnectGmail)
+        SecondaryButton("Ver revisión de correos", onOpenGmail)
         HestiaCard {
             Text("Protecciones", style = MaterialTheme.typography.titleLarge)
-            Text("Gmail · Sin conectar", style = MaterialTheme.typography.bodyLarge)
             Text("Llamadas · Sin configurar", style = MaterialTheme.typography.bodyLarge)
             Text("Conexión disponible próximamente", style = MaterialTheme.typography.bodyMedium)
         }

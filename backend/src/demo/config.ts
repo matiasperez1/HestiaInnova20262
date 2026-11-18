@@ -21,8 +21,12 @@ export function demoConfig(env: NodeJS.ProcessEnv = process.env) {
       value[key] > 65535
     )
       throw new AppError("INVALID_DEMO_PORT", 500);
+  const callReportThreshold: unknown = value.callReportThreshold;
+  if (typeof callReportThreshold !== "number" || !Number.isInteger(callReportThreshold) || callReportThreshold < 2 || callReportThreshold > 2_147_483_647)
+    throw new AppError("INVALID_CALL_REPORT_THRESHOLD", 500);
   return {
     ...value,
+    callReportThreshold,
     dataDir: resolve(backendRoot, ".local-demo"),
     connectionString: `postgresql://postgres@127.0.0.1:${value.databasePort}/hestia_demo`,
   };

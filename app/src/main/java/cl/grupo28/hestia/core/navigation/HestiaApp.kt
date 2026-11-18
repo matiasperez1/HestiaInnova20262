@@ -84,12 +84,12 @@ fun HestiaApp(viewModel: HestiaViewModel, accountViewModel: AccountViewModel, gm
 }
 
 @Composable
-private fun BrandHeader(back: (() -> Unit)? = null, settings: (() -> Unit)? = null) {
+private fun BrandHeader(back: (() -> Unit)? = null, settings: (() -> Unit)? = null, callPreview: Boolean = false) {
     Surface(color = MaterialTheme.colorScheme.background) {
         Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
             if (back != null) TextButton(back, Modifier.heightIn(min = 48.dp)) { HestiaIcon(HestiaSymbol.BACK); Spacer(Modifier.width(8.dp)); Text("Volver") }
-            else Row(verticalAlignment = Alignment.CenterVertically) { HestiaMark(Modifier.size(36.dp)); Spacer(Modifier.width(8.dp)); Text("Hestia", style = MaterialTheme.typography.titleLarge) }
-            AutomaticEnvironmentBadge()
+            if (back == null || callPreview) Row(verticalAlignment = Alignment.CenterVertically) { HestiaMark(Modifier.size(36.dp)); Spacer(Modifier.width(8.dp)); Text("Hestia", style = MaterialTheme.typography.titleLarge) }
+            if (!callPreview) AutomaticEnvironmentBadge()
             if (settings != null) TextButton(settings, Modifier.heightIn(min = 48.dp)) {
                 HestiaIcon(HestiaSymbol.SETTINGS); Spacer(Modifier.width(6.dp)); Text("Ajustes", style = MaterialTheme.typography.labelMedium)
             }
@@ -135,23 +135,30 @@ private fun MainNavigation(callSetup: CallSetup, viewModel: HestiaViewModel, acc
     val automatic = automaticModel?.state?.collectAsState()?.value
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: "summary"
+    val callPreview = route == callWarningPreviewRoute
+    val phone = phoneRoute
+    val tabs = if (phone == null) destinations else listOf(
+        destinations.first(), MainDestination(phone, "Teléfono", HestiaSymbol.PHONE),
+    ) + destinations.drop(1)
     val selected = when { route.startsWith("lesson") -> "education"; route == "settings" || route == "gmail" -> "summary"; else -> route }
-    val detail = route == "gmail" || route == "settings" || route.startsWith("lesson")
+    val detail = route == "gmail" || route == "settings" || route.startsWith("lesson") || callPreview
     val context = LocalContext.current
     fun openMain(target: String) { nav.navigate(target) { popUpTo("summary") { inclusive = target == "summary" }; launchSingleTop = true } }
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { BrandHeader(if (detail) { { nav.popBackStack(); Unit } } else null, if (route == "summary") { { nav.navigate("settings") } } else null) },
+        topBar = { BrandHeader(if (detail) { { nav.popBackStack(); Unit } } else null, if (route == "summary") { { nav.navigate("settings") } } else null, callPreview) },
         bottomBar = {
-            Surface(color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
-                Row(Modifier.fillMaxWidth().navigationBarsPadding().selectableGroup().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    destinations.forEach { destination ->
-                        val active = selected == destination.route
-                        Surface(Modifier.weight(1f), shape = MaterialTheme.shapes.medium, color = if (active) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface) {
-                            Column(Modifier.fillMaxWidth().heightIn(min = 76.dp).testTag("tab_${destination.route}").selectable(active, role = Role.Tab, onClick = { openMain(destination.route) }).padding(horizontal = 4.dp, vertical = 10.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                                HestiaIcon(destination.icon)
-                                Text(destination.label, fontWeight = if (active) FontWeight.Bold else FontWeight.Normal, style = MaterialTheme.typography.labelMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            if (!callPreview) {
+                Surface(color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+                    Row(Modifier.fillMaxWidth().navigationBarsPadding().selectableGroup().padding(if (phone == null) 12.dp else 8.dp), horizontalArrangement = Arrangement.spacedBy(if (phone == null) 12.dp else 4.dp)) {
+                        tabs.forEach { destination ->
+                            val active = selected == destination.route
+                            Surface(Modifier.weight(1f), shape = MaterialTheme.shapes.medium, color = if (active) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface) {
+                                Column(Modifier.fillMaxWidth().heightIn(min = 76.dp).testTag("tab_${destination.route}").selectable(active, role = Role.Tab, onClick = { openMain(destination.route) }).padding(horizontal = 4.dp, vertical = 10.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                                    HestiaIcon(destination.icon)
+                                    Text(destination.label, fontWeight = if (active) FontWeight.Bold else FontWeight.Normal, style = MaterialTheme.typography.labelMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                }
                             }
                         }
                     }
@@ -162,14 +169,21 @@ private fun MainNavigation(callSetup: CallSetup, viewModel: HestiaViewModel, acc
         val noMotion = state.settings.display.reduceMotion
         NavHost(nav, startDestination = "summary", modifier = Modifier.padding(padding).consumeWindowInsets(padding),
             enterTransition = { if (noMotion) EnterTransition.None else fadeIn(tween(120)) }, exitTransition = { if (noMotion) ExitTransition.None else fadeOut(tween(80)) }) {
-            composable("summary") { SummaryScreen(WeekRange.current(), state.summary, gmail, automatic, callSetup.state.active) { nav.navigate("gmail") } }
+            composable("summary") {
+                SummaryScreen(
+                    WeekRange.current(), state.summary, gmail, automatic, callSetup.state.active,
+                    showCalls = phone == null,
+                ) { nav.navigate("gmail") }
+            }
+            addPhoneDestination(callSetup) { callWarningPreviewRoute?.let(nav::navigate) }
+            addCallWarningPreview { nav.popBackStack() }
             composable("education") { EducationScreen(state.settings.completedLessons) { nav.navigate("lesson/$it") } }
             composable("family") {
                 FamilyScreen(state.settings.contacts, state.saving, viewModel::addContact, viewModel::removeContact) {
                     openExternal(context, dialIntent(it.phone), viewModel::showError)
                 }
             }
-            composable("settings") { SettingsScreen(state.settings.display, state.saving, viewModel::setDisplay, account, { accountViewModel.signIn(context) }, logout, accountViewModel::retry, gmail, { gmailViewModel.begin(false, authorizeGmail) }, { gmailViewModel.begin(true, authorizeGmail) }, { gmailViewModel.disconnect(revokeManual) }, { nav.navigate("gmail") }, callSetup) }
+            composable("settings") { SettingsScreen(state.settings.display, state.saving, viewModel::setDisplay, account, { accountViewModel.signIn(context) }, logout, accountViewModel::retry, gmail, { gmailViewModel.begin(false, authorizeGmail) }, { gmailViewModel.begin(true, authorizeGmail) }, { gmailViewModel.disconnect(revokeManual) }, { nav.navigate("gmail") }, callSetup, showCallSettings = phone == null) }
             composable("gmail") { GmailScreen(gmail, { gmailViewModel.begin(false, authorizeGmail) }, { gmailViewModel.begin(true, authorizeGmail) }, { gmailViewModel.disconnect(revokeManual) }, automaticAvailable = automaticModel != null, manualAvailable = !demoMode) { automaticModel?.let { AutomaticPanel(it, authorizeAutomatic, revokeGmail, account.account?.email) } } }
             composable("lesson/{id}", arguments = listOf(navArgument("id") { type = NavType.IntType })) { backStack ->
                 val lesson = lessons.firstOrNull { it.id == backStack.arguments?.getInt("id") }

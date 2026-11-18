@@ -128,3 +128,23 @@ Extensión de LOCAL_DEMO exclusiva de debug: servicio foreground dataSync inicia
 ## ETAPA 3 — Identificación de llamadas
 
 Activación mediante Android Telecom y `ROLE_CALL_SCREENING`, avisos locales para números reportados y registro semanal sin guardar números. Los datos sintéticos se incluyen solo en debug. Release usa una fuente vacía hasta contar con reputación real. Validada en emulador API 37. Pendiente la prueba física. Ver [guía de ETAPA 3](docs/ETAPA_3_CALL_SCREENING.md).
+
+La ETAPA 3.2 permite probar `ROLE_DIALER` e `InCallService` solo en DEBUG, con consentimiento de Android. RELEASE conserva la identificación de la ETAPA 3.1. No usar superposiciones ni desviar emergencias. Ver [activación, pruebas y restauración](docs/ETAPA_3_2_INCALL_SERVICE.md).
+
+La refinación de la ETAPA 3.2 incorpora **Teléfono** como cuarta pestaña exclusiva de DEBUG, con el marcador, roles, detecciones y simulación de llamadas. Las tres pestañas de RELEASE se conservan.
+
+## ETAPA 4 — Reputación compartida local
+
+Reportes telefónicos solo en DEBUG y DEMO LOCAL, con consentimiento por reporte e identidades sintéticas Ana y Bruno. Aceptar exclusivamente números ficticios del rango de prueba, conservar aparte los fixtures de ETAPA 3 y guardar un reporte por número e identidad, corregible y retirable. Los servicios Telecom consultan solo la última caché de agregados y permiten las llamadas. Cualquier integración con datos reales o un servicio de producción requiere autorización aparte. Ver [reputación compartida](docs/ETAPA_4_REPUTACION_LLAMADAS.md).
+
+## ETAPA 4.1 — Google Teléfono y protección de Hestia
+
+En DEBUG, usar Google Teléfono como marcador predeterminado y Hestia para `ROLE_CALL_SCREENING`. Mostrar la identificación en una actividad flotante desde el servicio cuando Android lo permita y usar una notificación como respaldo. No pedir superposición, historial ni agenda. El rol de marcador de Hestia queda en Herramientas DEBUG, para recuperar la modalidad 3.2. Ver [modo de protección](docs/ETAPA_4_1_MODO_PROTECCION.md).
+
+## ETAPA 4.2 — Teléfono inclusivo
+
+En DEBUG, Hestia vuelve a solicitar `ROLE_DIALER` desde Teléfono y ofrece su interfaz de `InCallService`. La modalidad 4.1 queda como alternativa bajo Protección. Contactos reutiliza la lista de confianza local de Familia. Recientes requiere activación explícita y guarda solo llamadas gestionadas por Hestia en una lista privada y acotada. No lee la agenda ni el historial de Android. RELEASE conserva su alcance previo. Ver [teléfono inclusivo](docs/ETAPA_4_2_DIALER_INCLUSIVO.md).
+
+## ETAPA 4.3 — Reportes contextuales
+
+En DEBUG, el reporte de DEMO LOCAL puede usar un número ficticio obtenido de Telecom o de Recientes y requiere confirmación explícita. El teléfono completo, la selección de identidad sintética y los reportes se mantienen separados de Gmail. Las categorías ajenas a fraude se muestran aparte y no contribuyen al umbral de dos identidades. La oferta tras colgar aprovecha la pantalla visible de Hestia o la entrada de Recientes, sin iniciar actividades desde segundo plano ni agregar permisos. Ver [reportes contextuales](docs/ETAPA_4_3_REPORTES_CONTEXTUALES.md).

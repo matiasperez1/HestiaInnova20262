@@ -1,11 +1,18 @@
 package cl.grupo28.hestia.domain
 
-enum class CallVerdict(val reported: Boolean, val synthetic: Boolean) {
-    NO_MATCH(false, false), REPORTED(true, false),
-    DEBUG_NO_MATCH(false, true), DEBUG_REPORTED(true, true),
+enum class CallClassification { SUSPICIOUS, PENDING_CORROBORATION, NO_REPORTS }
+
+enum class CallVerdict(val classification: CallClassification, val synthetic: Boolean) {
+    NO_MATCH(CallClassification.NO_REPORTS, false),
+    REPORTED(CallClassification.SUSPICIOUS, false),
+    DEBUG_NO_MATCH(CallClassification.NO_REPORTS, true),
+    DEBUG_PENDING(CallClassification.PENDING_CORROBORATION, true),
+    DEBUG_REPORTED(CallClassification.SUSPICIOUS, true);
+
+    val reported: Boolean get() = classification == CallClassification.SUSPICIOUS
 }
 
-/** Implementations only read local data. A future sync can populate that cache independently. */
+/** Implementations only read local data. Synchronization runs independently. */
 fun interface CallReputation {
     fun lookup(number: String): CallVerdict
 }

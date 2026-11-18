@@ -88,11 +88,11 @@ test(
           sql("../../../supabase/migrations/202611160001_gmail_automatic.sql")
             .replace(/^BEGIN;$/m, "")
             .replace(/^COMMIT;$/m, "") +
-          sql("../../demo/schema.sql") +
+          sql("../../demo/schema.sql") + sql("../../demo/call-reports.sql") +
           "COMMIT;",
       );
       for (const u of Object.values(personas)) await db.activate(u);
-      server = createServer(demoHandler(db));
+      server = createServer(demoHandler(db, cfg.callReportThreshold));
       await new Promise<void>((r) => server!.listen(0, "127.0.0.1", r));
       let base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
       async function request(path: string, body?: unknown, token?: string) {
@@ -111,6 +111,52 @@ test(
       }
       const a = (await request("/demo/session", { persona: "alice" })).json;
       const b = (await request("/demo/session", { persona: "bob" })).json;
+      await t.test("call reports share counts but only the author can read or edit their report", async () => {
+        const rep = "/demo/calls/reputation";
+        const save = "/demo/calls/report";
+        const withdraw = "/demo/calls/withdraw";
+        const number = "2025550199";
+        const category = "IMPERSONATION";
+        const report = { number, category, consent: true };
+        const lookup = (token: string) => request(rep, undefined, token);
+        assert.equal((await request(rep)).status, 401);
+        assert.deepEqual((await lookup(a.token)).json, { threshold: cfg.callReportThreshold, entries: [] });
+        assert.equal((await request(save, { ...report, consent: false }, a.token)).status, 400);
+        for (const invalid of ["2025550200", "+56912345678", "private"])
+          assert.equal((await request(save, { ...report, number: invalid }, a.token)).status, 400);
+        assert.equal((await request(save, { ...report, category: "free text" }, a.token)).status, 400);
+        const duplicate = await Promise.all([request(save, report, a.token), request(save, report, a.token)]);
+        assert.deepEqual(duplicate.map((item) => item.status), [200, 200]);
+        assert.deepEqual((await lookup(b.token)).json.entries, [{ number, count: 1, fraudCount: 1, categoryCounts: { IMPERSONATION: 1 }, ownCategory: null }]);
+        assert.equal((await request(withdraw, { number, userId: a.userId }, b.token)).status, 200);
+        assert.equal((await lookup(a.token)).json.entries[0].count, 1);
+        assert.equal((await request(save, { ...report, category: "UNWANTED_ADS" }, b.token)).status, 200);
+        assert.deepEqual((await lookup(a.token)).json.entries, [{ number, count: 2, fraudCount: 1, categoryCounts: { IMPERSONATION: 1, UNWANTED_ADS: 1 }, ownCategory: category }]);
+        assert.equal((await request(save, { ...report, category: "HARASSMENT" }, a.token)).status, 409);
+        assert.equal((await request(save, { ...report, category: "HARASSMENT", replace: true }, a.token)).status, 200);
+        assert.deepEqual((await lookup(a.token)).json.entries, [{ number, count: 2, fraudCount: 0, categoryCounts: { HARASSMENT: 1, UNWANTED_ADS: 1 }, ownCategory: "HARASSMENT" }]);
+        assert.equal((await lookup(b.token)).json.entries[0].ownCategory, "UNWANTED_ADS");
+        assert.equal((await request(save, { ...report, category: "POSSIBLE_FRAUD", replace: true }, a.token)).status, 200);
+        assert.equal((await request(save, { ...report, category: "IMPERSONATION", replace: true }, b.token)).status, 200);
+        assert.equal((await lookup(a.token)).json.entries[0].fraudCount, 2);
+        assert.equal((await request(withdraw, { number }, b.token)).status, 200);
+        assert.equal((await lookup(b.token)).json.entries[0].fraudCount, 1);
+        assert.equal((await lookup(b.token)).json.entries[0].ownCategory, null);
+        assert.equal((await request(withdraw, { number }, a.token)).status, 200);
+        assert.deepEqual((await lookup(b.token)).json.entries, []);
+        for (const number of ["2025550147", "2025550148"]) {
+          assert.equal((await request(save, { ...report, number, category: "OTHER_GENERAL" }, a.token)).status, 200);
+          assert.equal((await lookup(a.token)).json.entries[0].fraudCount, 0);
+          await request(withdraw, { number }, a.token);
+        }
+        const legacy = "2025550160";
+        assert.equal((await request(save, { ...report, number: legacy, category: "REQUEST_FOR_CODES" }, a.token)).status, 200);
+        await pool.query(sql("../../demo/call-reports.sql"));
+        assert.deepEqual((await lookup(a.token)).json.entries, [{
+          number: legacy, count: 1, fraudCount: 1, categoryCounts: { REQUEST_FOR_CODES: 1 }, ownCategory: "REQUEST_FOR_CODES",
+        }]);
+        await request(withdraw, { number: legacy }, a.token);
+      });
       await t.test(
         "explicit demo sessions use fixed server identities, not arbitrary user ids",
         async () => {
@@ -226,7 +272,7 @@ test(
             "UPDATE demo.queue SET lease_until=now()-interval '1 second' WHERE status='PROCESSING'",
           );
           await workOnce(db);
-          server = createServer(demoHandler(db));
+          server = createServer(demoHandler(db, cfg.callReportThreshold));
           await new Promise<void>((r) => server!.listen(0, "127.0.0.1", r));
           base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
           assert.equal(

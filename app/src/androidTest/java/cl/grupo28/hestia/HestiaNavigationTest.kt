@@ -48,9 +48,15 @@ class HestiaNavigationTest {
             listOf("Continuar sin cuenta", "Continuar sin Gmail", "Continuar sin activar", "Continuar sin agenda", "Continuar sin avisos", "Entrar a Hestia").forEach { tap(it) }
         }
         waitText("Tu semana")
-        compose.onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).assertCountEquals(3)
+        compose.onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).assertCountEquals(4)
         compose.onNodeWithTag("tab_summary").assertIsSelected()
-        compose.onNodeWithText("Llamadas").assertIsDisplayed()
+        compose.onNodeWithText("Llamadas").assertDoesNotExist()
+        compose.onNodeWithTag("tab_phone").performClick()
+        compose.onNodeWithTag("tab_phone").assertIsSelected()
+        tap("Protección")
+        compose.onNodeWithText("Llamadas").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("tab_summary").performClick()
+        waitText("Tu semana")
         compose.onNodeWithText("Mensajes SMS").assertDoesNotExist()
         capture("resumen")
         compose.activityRule.scenario.recreate()
@@ -89,7 +95,7 @@ class HestiaNavigationTest {
         fun addContact(name: String, phone: String) {
             tap("Agregar contacto")
             compose.onNodeWithText("Nombre").performTextInput(name)
-            compose.onNodeWithText("Teléfono").performTextInput(phone)
+            compose.onNode(hasText("Teléfono") and hasSetTextAction()).performTextInput(phone)
             compose.onNodeWithText("Guardar contacto").performClick()
             compose.waitUntil(10_000) { compose.onAllNodesWithText("Guardar contacto").fetchSemanticsNodes().isEmpty() }
             waitText(name)

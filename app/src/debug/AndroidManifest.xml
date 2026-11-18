@@ -2,7 +2,39 @@
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+    <queries>
+        <intent><action android:name="android.intent.action.DIAL" /></intent>
+    </queries>
     <application android:networkSecurityConfig="@xml/demo_network_security">
+        <activity android:name=".services.CallerIdentificationActivity" android:exported="false"
+            android:excludeFromRecents="true" android:noHistory="true"
+            android:taskAffinity="${applicationId}.callerid" android:theme="@style/HestiaCallerIdentification" />
         <service android:name=".features.automatic.LocalDemoBackgroundService" android:exported="false" android:foregroundServiceType="dataSync" />
+        <service
+            android:name=".features.calls.dialer.HestiaInCallService"
+            android:exported="true"
+            android:permission="android.permission.BIND_INCALL_SERVICE">
+            <meta-data android:name="android.telecom.IN_CALL_SERVICE_UI" android:value="true" />
+            <intent-filter><action android:name="android.telecom.InCallService" /></intent-filter>
+        </service>
+        <activity android:name=".features.calls.dialer.TelecomCallActivity"
+            android:exported="false" android:launchMode="singleTask" android:excludeFromRecents="true"
+            android:taskAffinity="${applicationId}.incall" />
+        <receiver android:name=".features.calls.dialer.CallActionReceiver" android:exported="false" />
+        <activity android:name=".features.calls.dialer.HestiaDialerActivity"
+            android:exported="true" android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="tel" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

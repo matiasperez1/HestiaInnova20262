@@ -21,9 +21,9 @@ La consulta es local y síncrona. La normalización admite separadores comunes, 
 
 ## Avisos, registro y privacidad
 
-- Para una coincidencia reportada, Android muestra un aviso local de importancia alta en el canal **Avisos de llamadas**. El aviso de depuración está rotulado **PRUEBA DE LLAMADAS**. Los avisos usan visibilidad privada y omiten el número. Desde Android 13 se requiere `POST_NOTIFICATIONS`. Deshabilitar los avisos conserva el registro en Resumen.
+- Para una coincidencia reportada, Android muestra un aviso local de importancia alta en el canal **Avisos de llamadas**. El aviso de depuración se titula **Prueba · Posible llamada fraudulenta**. Los números sin reportes se registran sin generar un aviso. Android decide si la notificación se muestra encima de la pantalla de llamada. Los avisos usan visibilidad privada y omiten el número. Desde Android 13 se requiere `POST_NOTIFICATIONS`. Deshabilitar los avisos conserva el registro en Resumen.
 - DataStore guarda un identificador aleatorio, fecha y hora, resultado y marca sintética en el espacio privado excluido de copias de seguridad. Las entradas anteriores a 30 días se depuran al registrar una detección nueva. El número se usa en memoria para la consulta. Esta etapa no usa red, agenda, audio ni historial telefónico del sistema.
-- Resumen muestra las llamadas registradas y sospechosas de la semana local, de lunes a domingo. Las detecciones sintéticas aparecen aparte bajo **Prueba de llamadas**. Un evento indica una detección, con independencia de si se mostró o se revisó un aviso.
+- Resumen muestra las llamadas registradas y sospechosas de la semana local, de lunes a domingo. Las detecciones sintéticas aparecen en la tarjeta **Pruebas de llamadas**, con el total de simulaciones y el desglose entre sospechosas y sin reportes. Un evento indica una detección, con independencia de si se mostró o se revisó un aviso.
 
 ## Archivos principales
 
@@ -62,7 +62,7 @@ adb -s emulator-5556 emu gsm call 2025550148
 adb -s emulator-5556 emu gsm cancel 2025550148
 ```
 
-Comprueba **Resumen → Llamadas → Prueba de llamadas**. Los valores se acumulan durante la semana. Para diagnosticar el recorrido, usa `adb -s emulator-5556 shell dumpsys telecom` y busca el resultado `Allow` del servicio de Hestia.
+Comprueba **Resumen → Pruebas de llamadas**. Los valores se acumulan durante la semana. Para diagnosticar el recorrido, usa `adb -s emulator-5556 shell dumpsys telecom` y busca el resultado `Allow` del servicio de Hestia.
 
 ## Límites y ETAPA 4
 

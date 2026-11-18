@@ -66,7 +66,7 @@ class LocalDemoGateway(private val modes:DemoModeStore,private val base:String=B
             token=j.getString("token");tokenOwner=expected;expires=System.currentTimeMillis()+11*3600000
         }
     }
-    private suspend fun call(owner:String,path:String,body:JSONObject?=null):JSONObject {ensure(owner);val result=request(path,body,credentials.bearer(owner));if(!credentials.isCurrent(owner))throw AutomaticError("OWNER_CHANGED");return result}
+    internal suspend fun call(owner:String,path:String,body:JSONObject?=null):JSONObject {ensure(owner);val result=request(path,body,credentials.bearer(owner));if(!credentials.isCurrent(owner))throw AutomaticError("OWNER_CHANGED");return result}
     suspend fun notifications(owner:String,after:String?):DemoDeliveryPage {
         require(after==null || after.matches(Regex("[A-Za-z0-9_-]{1,128}")))
         val j=call(owner,"/demo/notifications?limit=50"+(after?.let{"&after=$it"}?:""))

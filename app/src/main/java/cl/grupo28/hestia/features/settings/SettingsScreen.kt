@@ -17,12 +17,12 @@ import cl.grupo28.hestia.features.calls.*
 import cl.grupo28.hestia.core.components.*
 
 @Composable
-fun SettingsScreen(preferences: DisplayPreferences, saving: Boolean, onChange: (DisplayPreferences) -> Unit, account: AuthState, onSignIn: () -> Unit, onSignOut: () -> Unit, onRetryAccount: () -> Unit, gmail: GmailUiState, onConnectGmail: () -> Unit, onSyncGmail: () -> Unit, onDisconnectGmail: () -> Unit, onOpenGmail: () -> Unit, calls: CallSetup) {
+fun SettingsScreen(preferences: DisplayPreferences, saving: Boolean, onChange: (DisplayPreferences) -> Unit, account: AuthState, onSignIn: () -> Unit, onSignOut: () -> Unit, onRetryAccount: () -> Unit, gmail: GmailUiState, onConnectGmail: () -> Unit, onSyncGmail: () -> Unit, onDisconnectGmail: () -> Unit, onOpenGmail: () -> Unit, calls: CallSetup, showCallSettings: Boolean = true) {
     Page("Ajustes", "Hestia, a tu manera.") {
         AccountCard(account, onSignIn, onSignOut, onRetryAccount)
         GmailPanel(gmail, onConnectGmail, onSyncGmail, onDisconnectGmail)
         SecondaryButton("Ver revisión de correos", onOpenGmail)
-        HestiaCard {
+        if (showCallSettings) HestiaCard {
             SectionHeader("Identificación de llamadas")
             CallRoleContent(calls)
             if (calls.state.active) CallNoticeContent(calls)

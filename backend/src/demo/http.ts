@@ -3,7 +3,9 @@ import { body } from "../http.js";
 import { AppError } from "../types.js";
 import { validId } from "../time.js";
 import { DemoStore } from "./store.js";
-export function demoHandler(db: DemoStore) {
+import { DemoCallReports } from "./call-reports.js";
+export function demoHandler(db: DemoStore, callReportThreshold: number) {
+  const calls = new DemoCallReports(db, callReportThreshold);
   return async (req: IncomingMessage, res: ServerResponse) => {
     const send = (status: number, value: unknown) => {
       res.writeHead(status, {
@@ -35,6 +37,20 @@ export function demoHandler(db: DemoStore) {
         return;
       }
       const user = await db.authenticate(req.headers.authorization);
+      if (path === "/demo/calls/reputation" && req.method === "GET") {
+        send(200, await calls.snapshot(user.id));
+        return;
+      }
+      if (path === "/demo/calls/report" && req.method === "POST") {
+        await calls.save(user.id, await body(req));
+        send(200, { saved: true });
+        return;
+      }
+      if (path === "/demo/calls/withdraw" && req.method === "POST") {
+        await calls.withdraw(user.id, (await body(req))?.number);
+        send(200, { withdrawn: true });
+        return;
+      }
       if (path === "/v1/gmail/status" && req.method === "GET") {
         const c = await db.find(user.id);
         send(200, {

@@ -50,13 +50,14 @@ fun FamilyScreen(contacts: List<EmergencyContact>, saving: Boolean, onAdd: (Stri
 }
 
 @Composable
-private fun AddContactDialog(saving: Boolean, onDismiss: () -> Unit, onSave: (String, String) -> Unit) {
+internal fun AddContactDialog(saving: Boolean, onDismiss: () -> Unit, onSave: (String, String) -> Unit, error: String? = null) {
     var name by rememberSaveable { mutableStateOf("") }
     var phone by rememberSaveable { mutableStateOf("") }
     AlertDialog(onDismissRequest = { if (!saving) onDismiss() }, title = { Text("Agregar contacto") },
         text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             OutlinedTextField(name, { name = it.take(60) }, label = { Text("Nombre") }, singleLine = true, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(phone, { phone = it.take(24) }, label = { Text("Teléfono") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), modifier = Modifier.fillMaxWidth())
+            if (error != null) Text(error, color = MaterialTheme.colorScheme.error)
         } },
         confirmButton = { TextButton({ onSave(name, phone) }, enabled = !saving && name.isNotBlank() && phone.isNotBlank(), modifier = Modifier.heightIn(min = 48.dp)) { Text(if (saving) "Guardando…" else "Guardar contacto") } },
         dismissButton = { TextButton(onDismiss, enabled = !saving, modifier = Modifier.heightIn(min = 48.dp)) { Text("Cancelar") } })

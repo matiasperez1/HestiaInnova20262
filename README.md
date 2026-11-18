@@ -10,6 +10,10 @@ Desde backend en PowerShell: `$env:LOCAL_DEMO='true'`, `npm.cmd run demo:start`.
 
 [Guía completa: comandos, escenarios, persistencia, pruebas y límites](docs/ETAPA_2C1_LOCAL_DEMO.md). Los avisos son una bandeja simulada consultada en primer plano; no son push reales. Release no incluye controles demo ni HTTP local.
 
+## Identificación de llamadas — ETAPA 3
+
+Hestia identifica las llamadas que Android Telecom le entrega, consulta la reputación local y muestra avisos para números reportados sin bloquear llamadas. Resumen separa las detecciones reales de los casos sintéticos, disponibles solo en debug. Release aún carece de una lista real de reputación. El flujo se validó en el emulador API 37. La prueba en teléfono físico sigue pendiente. Consulta la [guía de ETAPA 3](docs/ETAPA_3_CALL_SCREENING.md) para activar el rol y reproducir las pruebas con ADB.
+
 ## Experiencia de producción — ETAPA 2C preparada
 
 Solo tres secciones: **Resumen, Aprender y Familia**. Configuración inicial de siete pasos, persistida con DataStore y reanudable. Tras finalizar el recorrido se abre Resumen en los siguientes inicios.
@@ -18,7 +22,7 @@ Cuenta Google mediante Credential Manager y Supabase Auth implementada para conf
 
 Gmail conserva la revisión manual 2B y añade la implementación de revisión automática 2C: autorización offline independiente, API/worker TypeScript para Cloud Run, Pub/Sub, Scheduler, KMS, SQL/RLS, resumen/alertas y FCM opcional. **La infraestructura no está desplegada ni se ha validado el flujo con Gmail/FCM reales.** Sin URL de API/Firebase auténticas, la aplicación ofrece la alternativa manual y no presenta protección automática activa. Ver [guía completa 2C](docs/ETAPA_2C_GMAIL_AUTOMATICO.md), que incluye pasos exactos para configurar y probar un correo de prueba autorizado.
 
-Se mantienen Resumen, Aprender y Familia. Resumen utiliza datos reales, separa resultados automáticos de la última revisión manual y muestra «Sin datos» para fuentes no consultadas. Las llamadas siguen pendientes. La activación automática requiere consentimiento propio: comienza desde ese momento y no revisa todo el historial. Avisos HIGH genéricos y permiso POST_NOTIFICATIONS desde Android 13; rechazarlo no detiene las alertas dentro de la app. Cerrar sesión desvincula avisos del teléfono; Desconectar detiene el seguimiento del servidor.
+Se mantienen Resumen, Aprender y Familia. Resumen utiliza datos reales, separa resultados automáticos de la última revisión manual y muestra «Sin datos» para fuentes no consultadas. La activación automática requiere consentimiento propio: comienza desde ese momento y no revisa todo el historial. Avisos HIGH genéricos y permiso POST_NOTIFICATIONS desde Android 13; rechazarlo no detiene las alertas dentro de la app. Cerrar sesión desvincula avisos del teléfono; Desconectar detiene el seguimiento del servidor.
 
 Sesión Supabase cifrada con Keystore y excluida de backups, preservada en esta actualización. No se modificaron secrets.properties ni los clientes OAuth existentes. No se desplegaron recursos de pago, no se aplicaron migraciones remotas ni se hicieron commits/push.
 

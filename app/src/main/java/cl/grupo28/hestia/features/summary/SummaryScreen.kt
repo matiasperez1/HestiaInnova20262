@@ -2,7 +2,12 @@ package cl.grupo28.hestia.features.summary
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import cl.grupo28.hestia.data.CallEvents
+import cl.grupo28.hestia.data.CallDetection
+import kotlinx.coroutines.flow.catch
+import java.io.IOException
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -16,10 +21,20 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
-fun SummaryScreen(week: WeekRange, summary: WeeklySummary?, gmail: GmailUiState, onOpenGmail: () -> Unit) = SummaryScreen(week,summary,gmail,null,onOpenGmail)
+fun SummaryScreen(week: WeekRange, summary: WeeklySummary?, gmail: GmailUiState, onOpenGmail: () -> Unit) = SummaryScreen(week,summary,gmail,null,false,onOpenGmail)
 
 @Composable
-fun SummaryScreen(week: WeekRange, summary: WeeklySummary?, gmail: GmailUiState, automatic: AutomaticUiState?, onOpenGmail: () -> Unit) {
+fun SummaryScreen(week: WeekRange, summary: WeeklySummary?, gmail: GmailUiState, automatic: AutomaticUiState?, onOpenGmail: () -> Unit) =
+    SummaryScreen(week, summary, gmail, automatic, false, onOpenGmail)
+
+@Composable
+fun SummaryScreen(week: WeekRange, summary: WeeklySummary?, gmail: GmailUiState, automatic: AutomaticUiState?, callsActive: Boolean, onOpenGmail: () -> Unit) {
+    val context = LocalContext.current
+    val callEvents = remember(context) { CallEvents(context).events.catch { if (it !is IOException) throw it } }
+    val detections by callEvents.collectAsState(initial = emptyList<CallDetection>())
+    val calls = detections.filter { !it.synthetic && week.contains(it.event.occurredAt) }
+    val samples = detections.filter { it.synthetic && week.contains(it.event.occurredAt) }
+    val callSummary = calls.takeIf { it.isNotEmpty() }?.let { WeeklySummary.fromEvents(it.map(CallDetection::event), week) }
     val demo=automatic?.demoSelected==true
     val realSummary=summary?.takeUnless{demo}
     val remote = automatic?.summary?.takeIf { runCatching { java.time.Instant.parse(it.weekStart).atZone(java.time.ZoneId.systemDefault()).toLocalDate() == week.start }.getOrDefault(false) }
@@ -30,16 +45,25 @@ fun SummaryScreen(week: WeekRange, summary: WeeklySummary?, gmail: GmailUiState,
         HestiaCard(color = MaterialTheme.colorScheme.tertiaryContainer) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 HestiaIcon(HestiaSymbol.CLOCK)
-                Text(if(demo) "DEMO LOCAL · correos simulados" else if (automaticActive) "Revisión automática de correos" else if (gmail.verified) "Revisión manual de correos" else "Protección pendiente", style = MaterialTheme.typography.titleMedium)
+                Text(if(demo) "DEMO LOCAL · correos simulados" else if (automaticActive) "Revisión automática de correos" else if (gmail.verified) "Revisión manual de correos" else if (callsActive) "Identificación de llamadas activada" else "Protección pendiente", style = MaterialTheme.typography.titleMedium)
             }
-            Text(if(demo) "Solo datos sintéticos. No representa protección real de Gmail." else if (automaticActive) "Gmail automático. Llamadas aún sin configurar." else if (gmail.verified) "Gmail disponible. Llamadas aún sin configurar." else "Gmail sin verificar. Llamadas aún sin configurar.", style = MaterialTheme.typography.bodyMedium)
+            Text(if(demo) "Solo datos sintéticos. No representa protección real de Gmail." else if (automaticActive) "Revisión automática disponible." else if (gmail.verified) "Revisión manual disponible." else "Gmail sin verificar.", style = MaterialTheme.typography.bodyMedium)
         }
         HestiaCard {
             MetricHeading("Llamadas", HestiaSymbol.PHONE)
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Metric(realSummary?.registeredCalls, "Registradas por Hestia", Modifier.weight(1f))
-                Metric(realSummary?.suspiciousCalls, "Sospechosas", Modifier.weight(1f))
+                Metric(callSummary?.registeredCalls ?: realSummary?.registeredCalls, "Registradas por Hestia", Modifier.weight(1f))
+                Metric(callSummary?.suspiciousCalls ?: realSummary?.suspiciousCalls, "Sospechosas", Modifier.weight(1f))
             }
+            Text(
+                if (callsActive) "Identificación activada. Solo se cuentan las llamadas que Android entrega a Hestia."
+                else "Identificación desactivada. Aquí puedes ver las detecciones guardadas de esta semana.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            if (samples.isNotEmpty()) Text(
+                "Prueba de llamadas: ${samples.size} registradas · ${samples.count { it.event.suspicious }} reportadas",
+                style = MaterialTheme.typography.bodyMedium,
+            )
         }
         HestiaCard {
             MetricHeading("Correos", HestiaSymbol.MAIL)
@@ -58,7 +82,7 @@ fun SummaryScreen(week: WeekRange, summary: WeeklySummary?, gmail: GmailUiState,
                 Text("Alertas revisadas por ti", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
             }
         }
-        if (realSummary == null && emailSnapshot == null && remote == null) Text("Aún no hay datos para esta semana.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (callSummary == null && samples.isEmpty() && realSummary == null && emailSnapshot == null && remote == null) Text("Aún no hay datos para esta semana.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

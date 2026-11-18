@@ -50,7 +50,7 @@ class HestiaNavigationTest {
         waitText("Tu semana")
         compose.onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).assertCountEquals(3)
         compose.onNodeWithTag("tab_summary").assertIsSelected()
-        compose.onNodeWithText("Protección pendiente").assertIsDisplayed()
+        compose.onNodeWithText("Llamadas").assertIsDisplayed()
         compose.onNodeWithText("Mensajes SMS").assertDoesNotExist()
         capture("resumen")
         compose.activityRule.scenario.recreate()

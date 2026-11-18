@@ -38,6 +38,8 @@ import cl.grupo28.hestia.features.summary.SummaryScreen
 import cl.grupo28.hestia.features.education.*
 import cl.grupo28.hestia.features.family.FamilyScreen
 import cl.grupo28.hestia.features.settings.SettingsScreen
+import cl.grupo28.hestia.features.calls.CallSetup
+import cl.grupo28.hestia.features.calls.rememberCallSetup
 
 private data class MainDestination(val route: String, val label: String, val icon: HestiaSymbol)
 private val destinations = listOf(
@@ -61,6 +63,7 @@ fun HestiaApp(viewModel: HestiaViewModel, accountViewModel: AccountViewModel, gm
     val context = LocalContext.current
     val realGmail by gmailViewModel.state.collectAsState()
     val gmail=if(demoMode)GmailUiState()else realGmail
+    val callSetup = rememberCallSetup()
     HestiaTheme(state.settings.display) {
         if (state.loading) {
             Surface(Modifier.fillMaxSize()) { Box(Modifier.systemBarsPadding(), contentAlignment = Alignment.Center) { LoadingState("Abriendo Hestia…") } }
@@ -69,10 +72,10 @@ fun HestiaApp(viewModel: HestiaViewModel, accountViewModel: AccountViewModel, gm
         } else if (!state.settings.onboardingComplete) {
             BackHandler(state.settings.onboardingStep > 0 && !state.saving && !account.busy) { viewModel.previousOnboarding() }
             Scaffold(topBar = { BrandHeader() }) { padding ->
-                Box(Modifier.padding(padding)) { OnboardingScreen(state.settings.onboardingStep, state.saving, viewModel::advanceOnboarding, viewModel::previousOnboarding, account, { accountViewModel.signIn(context) }, logout, accountViewModel::retry, gmail, { gmailViewModel.begin(false, authorizeGmail) }, { gmailViewModel.begin(true, authorizeGmail) }, { gmailViewModel.disconnect(revokeManual) }) }
+                Box(Modifier.padding(padding)) { OnboardingScreen(state.settings.onboardingStep, state.saving, viewModel::advanceOnboarding, viewModel::previousOnboarding, account, { accountViewModel.signIn(context) }, logout, accountViewModel::retry, gmail, { gmailViewModel.begin(false, authorizeGmail) }, { gmailViewModel.begin(true, authorizeGmail) }, { gmailViewModel.disconnect(revokeManual) }, callSetup) }
             }
         } else {
-            MainNavigation(viewModel, accountViewModel, gmailViewModel, authorizeGmail, revokeGmail, automaticModel, authorizeAutomatic, notificationEvent, consumedNotification)
+            MainNavigation(callSetup, viewModel, accountViewModel, gmailViewModel, authorizeGmail, revokeGmail, automaticModel, authorizeAutomatic, notificationEvent, consumedNotification)
         }
         if (state.ready && state.error != null) AlertDialog(onDismissRequest = viewModel::clearError,
             title = { Text("Revisemos este paso") }, text = { Text(state.error!!) },
@@ -95,7 +98,7 @@ private fun BrandHeader(back: (() -> Unit)? = null, settings: (() -> Unit)? = nu
 }
 
 @Composable
-private fun MainNavigation(viewModel: HestiaViewModel, accountViewModel: AccountViewModel, gmailViewModel: GmailViewModel, authorizeGmail: (String, String) -> Unit, revokeGmail: (String, (Boolean) -> Unit) -> Unit, automaticModel: AutomaticViewModel? = null, authorizeAutomatic: (String,String)->Unit = {_,_->}, notificationEvent: Pair<String,String>? = null, consumedNotification: ()->Unit = {}) {
+private fun MainNavigation(callSetup: CallSetup, viewModel: HestiaViewModel, accountViewModel: AccountViewModel, gmailViewModel: GmailViewModel, authorizeGmail: (String, String) -> Unit, revokeGmail: (String, (Boolean) -> Unit) -> Unit, automaticModel: AutomaticViewModel? = null, authorizeAutomatic: (String,String)->Unit = {_,_->}, notificationEvent: Pair<String,String>? = null, consumedNotification: ()->Unit = {}) {
     val scope = rememberCoroutineScope()
     val logout: () -> Unit = { scope.launch { val warning=automaticModel?.beforeLogout(); accountViewModel.signOut(warning) } }
     val revokeManual: (String,(Boolean)->Unit)->Unit = { email, done -> scope.launch {
@@ -159,14 +162,14 @@ private fun MainNavigation(viewModel: HestiaViewModel, accountViewModel: Account
         val noMotion = state.settings.display.reduceMotion
         NavHost(nav, startDestination = "summary", modifier = Modifier.padding(padding).consumeWindowInsets(padding),
             enterTransition = { if (noMotion) EnterTransition.None else fadeIn(tween(120)) }, exitTransition = { if (noMotion) ExitTransition.None else fadeOut(tween(80)) }) {
-            composable("summary") { SummaryScreen(WeekRange.current(), state.summary, gmail, automatic) { nav.navigate("gmail") } }
+            composable("summary") { SummaryScreen(WeekRange.current(), state.summary, gmail, automatic, callSetup.state.active) { nav.navigate("gmail") } }
             composable("education") { EducationScreen(state.settings.completedLessons) { nav.navigate("lesson/$it") } }
             composable("family") {
                 FamilyScreen(state.settings.contacts, state.saving, viewModel::addContact, viewModel::removeContact) {
                     openExternal(context, dialIntent(it.phone), viewModel::showError)
                 }
             }
-            composable("settings") { SettingsScreen(state.settings.display, state.saving, viewModel::setDisplay, account, { accountViewModel.signIn(context) }, logout, accountViewModel::retry, gmail, { gmailViewModel.begin(false, authorizeGmail) }, { gmailViewModel.begin(true, authorizeGmail) }, { gmailViewModel.disconnect(revokeManual) }, { nav.navigate("gmail") }) }
+            composable("settings") { SettingsScreen(state.settings.display, state.saving, viewModel::setDisplay, account, { accountViewModel.signIn(context) }, logout, accountViewModel::retry, gmail, { gmailViewModel.begin(false, authorizeGmail) }, { gmailViewModel.begin(true, authorizeGmail) }, { gmailViewModel.disconnect(revokeManual) }, { nav.navigate("gmail") }, callSetup) }
             composable("gmail") { GmailScreen(gmail, { gmailViewModel.begin(false, authorizeGmail) }, { gmailViewModel.begin(true, authorizeGmail) }, { gmailViewModel.disconnect(revokeManual) }, automaticAvailable = automaticModel != null, manualAvailable = !demoMode) { automaticModel?.let { AutomaticPanel(it, authorizeAutomatic, revokeGmail, account.account?.email) } } }
             composable("lesson/{id}", arguments = listOf(navArgument("id") { type = NavType.IntType })) { backStack ->
                 val lesson = lessons.firstOrNull { it.id == backStack.arguments?.getInt("id") }

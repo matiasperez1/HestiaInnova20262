@@ -37,7 +37,7 @@ Sans serif nativa: pantalla 28–32 sp, tarjetas 20–22 sp, cuerpo 18 sp, secun
 
 Conservar AGP 9.5.1, Gradle 9.6.0, JDK 25, Kotlin integrado de AGP 9, compileSdk/targetSdk 37 y minSdk 29. Sin actualizaciones masivas ni rutas locales compartidas.
 
-Kotlin, Compose, Material 3, Navigation Compose, ViewModel/StateFlow y DataStore. Room/WorkManager solo cuando una función real lo requiera. ETAPA 2A incorpora cuenta Google mediante Credential Manager y Supabase Auth; se verificó una sesión real restaurada. ETAPA 2B incorpora autorización Gmail y revisión manual local, pendiente de configurar Gmail API/scope y probar el buzón real. La ETAPA 2C prepara PostgreSQL de aplicación y Gmail automático; despliegue y prueba real pendientes. Llamadas siguen siendo futuras.
+Kotlin, Compose, Material 3, Navigation Compose, ViewModel/StateFlow y DataStore. Room/WorkManager solo cuando una función real lo requiera. ETAPA 2A incorpora cuenta Google mediante Credential Manager y Supabase Auth; se verificó una sesión real restaurada. ETAPA 2B incorpora autorización Gmail y revisión manual local, pendiente de configurar Gmail API/scope y probar el buzón real. La ETAPA 2C prepara PostgreSQL de aplicación y Gmail automático; despliegue y prueba real pendientes. La ETAPA 3 implementa la identificación de llamadas y está validada en emulador. La prueba en teléfono físico sigue pendiente.
 
 - `core`: tema, componentes, accesibilidad, navegación y estado compartido.
 - `features/summary`, `education`, `family`: las tres funciones principales.
@@ -51,9 +51,9 @@ No poner lógica de negocio en MainActivity o composables. Usar interfaces de re
 
 Guardar con DataStore el último paso y su finalización. No repetirlo al abrir de nuevo; reanudar el paso pendiente. Completar el recorrido no significa que las protecciones estén activas.
 
-Pasos: bienvenida, Google mediante Supabase Auth, autorización Gmail independiente, identificación de llamadas, agenda opcional para llamadas, notificaciones y finalización.
+Pasos: bienvenida, Google mediante Supabase Auth, autorización Gmail independiente, identificación de llamadas, información de cobertura de agenda, notificaciones y finalización.
 
-En ETAPA 2B Google y Gmail son conexiones independientes. Se puede continuar sin cuenta o sin Gmail. Gmail requiere consentimiento nativo gmail.readonly y comprobación real del perfil antes de mostrar conexión verificada; llamadas, agenda y notificaciones continúan pendientes. En etapas posteriores:
+En ETAPA 2B Google y Gmail son conexiones independientes. Se puede continuar sin cuenta o sin Gmail. Gmail requiere consentimiento nativo gmail.readonly y comprobación real del perfil antes de mostrar conexión verificada. Para llamadas y permisos:
 
 - Separar autenticación de Google y OAuth Gmail de solo lectura. Nunca pedir acceso para modificar, eliminar o enviar correos.
 - Solicitar `ROLE_CALL_SCREENING` con RoleManager solo junto con un servicio funcional. No sustituir la aplicación telefónica habitual.
@@ -64,11 +64,11 @@ En ETAPA 2B Google y Gmail son conexiones independientes. Se puede continuar sin
 
 ## Llamadas, correos y resumen
 
-CallScreeningService consultará exclusivamente caché local y responderá dentro de cinco segundos. Sin red en tiempo real, acceso al audio ni bloqueo automático. El número puede ser suplantado. Los contactos requieren READ_CONTACTS para ser entregados al servicio; privados/restringidos pueden quedar excluidos. Nunca presentar las cifras como todo el historial telefónico.
+CallScreeningService responde de inmediato para permitir la llamada y consulta exclusivamente la fuente local de reputación. Sin red en tiempo real, acceso al audio ni bloqueo automático. El número puede ser suplantado. Los contactos requieren READ_CONTACTS para ser entregados al servicio; privados/restringidos pueden quedar excluidos. Nunca presentar las cifras como todo el historial telefónico.
 
 Gmail empezará con sincronización manual autorizada y reglas deterministas explicables. `gmail.readonly` es restringido y requiere configurar consentimiento y pruebas en Google Cloud. No abrir enlaces automáticamente ni afirmar autenticidad absoluta.
 
-Resumen: semana actual, llamadas registradas/sospechosas, correos analizados/sospechosos y alertas revisadas. Solo eventos reales; no confundir detección con revisión o rechazo. Sin fuente conectada usar ausencia de datos, nunca cifras de demostración. No afirmar estafas o pérdidas evitadas.
+Resumen: semana actual, llamadas registradas/sospechosas, correos analizados/sospechosos y alertas revisadas. Solo eventos reales; no confundir detección con revisión o rechazo. Sin datos reales mostrar ausencia de datos. Las pruebas sintéticas de llamadas se rotulan y se cuentan por separado, solo en debug. No afirmar estafas o pérdidas evitadas.
 
 ## Familia, educación y privacidad
 
@@ -124,3 +124,7 @@ Prohibido habilitar facturación, contratar servicios, crear recursos Cloud, eje
 ## ETAPA 2C.2 — Avisos locales en segundo plano (autorizada)
 
 Extensión de LOCAL_DEMO exclusiva de debug: servicio foreground dataSync iniciado explícitamente, avisos Android locales HIGH sintéticos y cursor local por identidad. No usa FCM, Gmail, OAuth ni servicios externos; el flujo real se conserva. Sin BOOT_COMPLETED ni excepciones de batería. Android puede detener o retrasar el servicio, incluyendo Doze y el límite dataSync; no prometer seguimiento permanente. Ver docs/ETAPA_2C2_BACKGROUND_DEMO_NOTIFICATIONS.md. Preservar 2C.1 como documento histórico. No habilitar facturación, modificar credenciales, desplegar, iniciar ETAPA 3 ni hacer commit/push.
+
+## ETAPA 3 — Identificación de llamadas
+
+Activación mediante Android Telecom y `ROLE_CALL_SCREENING`, avisos locales para números reportados y registro semanal sin guardar números. Los datos sintéticos se incluyen solo en debug. Release usa una fuente vacía hasta contar con reputación real. Validada en emulador API 37. Pendiente la prueba física. Ver [guía de ETAPA 3](docs/ETAPA_3_CALL_SCREENING.md).

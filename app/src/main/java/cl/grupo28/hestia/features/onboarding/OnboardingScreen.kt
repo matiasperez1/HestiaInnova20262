@@ -13,6 +13,7 @@ import cl.grupo28.hestia.core.components.*
 import cl.grupo28.hestia.domain.auth.AuthState
 import cl.grupo28.hestia.features.account.AccountCard
 import cl.grupo28.hestia.features.gmail.*
+import cl.grupo28.hestia.features.calls.*
 
 private data class SetupStep(val title: String, val text: String, val symbol: HestiaSymbol, val action: String? = null, val next: String = "Continuar")
 private val steps = listOf(
@@ -20,13 +21,13 @@ private val steps = listOf(
     SetupStep("Tu cuenta Google", "Tu cuenta te identifica en Hestia. Tus contactos y lecciones siguen guardados solo en este teléfono.", HestiaSymbol.LOCK, "Iniciar sesión con Google", "Continuar sin cuenta"),
     SetupStep("Conectar Gmail", "Hestia revisará tus correos para identificar posibles estafas.", HestiaSymbol.MAIL, "Autorizar lectura de Gmail", "Continuar sin Gmail"),
     SetupStep("Identificar llamadas", "Hestia puede identificar números sospechosos antes de que contestes.", HestiaSymbol.PHONE, "Activar identificación", "Continuar sin activar"),
-    SetupStep("Llamadas de tus contactos", "Incluir tu agenda será opcional. Tus contactos de emergencia no necesitan ese permiso.", HestiaSymbol.FAMILY, "Incluir llamadas de mi agenda", "Continuar sin agenda"),
+    SetupStep("Llamadas de tus contactos", "En esta etapa revisamos las llamadas de números que no están guardados en tu agenda.", HestiaSymbol.FAMILY, "Incluir llamadas de mi agenda", "Continuar sin agenda"),
     SetupStep("Recibir avisos", "Te avisaremos si detectamos algo sospechoso.", HestiaSymbol.ALERT, "Activar notificaciones", "Continuar sin avisos"),
     SetupStep("A tu ritmo", "Puedes usar Hestia y configurar la protección más adelante.", HestiaSymbol.SHIELD, next = "Entrar a Hestia"),
 )
 
 @Composable
-fun OnboardingScreen(step: Int, saving: Boolean, onNext: () -> Unit, onBack: () -> Unit, account: AuthState, onSignIn: () -> Unit, onSignOut: () -> Unit, onRetryAccount: () -> Unit, gmail: GmailUiState, onConnectGmail: () -> Unit, onSyncGmail: () -> Unit, onDisconnectGmail: () -> Unit) {
+fun OnboardingScreen(step: Int, saving: Boolean, onNext: () -> Unit, onBack: () -> Unit, account: AuthState, onSignIn: () -> Unit, onSignOut: () -> Unit, onRetryAccount: () -> Unit, gmail: GmailUiState, onConnectGmail: () -> Unit, onSyncGmail: () -> Unit, onDisconnectGmail: () -> Unit, calls: CallSetup) {
     val page = steps[step]
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
         Text("Paso ${step + 1} de 7", style = MaterialTheme.typography.labelLarge)
@@ -36,11 +37,13 @@ fun OnboardingScreen(step: Int, saving: Boolean, onNext: () -> Unit, onBack: () 
         Text(page.text, style = MaterialTheme.typography.bodyLarge)
         if (step == 6) HestiaCard {
             Text(if (gmail.verified) "Correos: revisión manual disponible" else "Correos: sin conexión verificada", style = MaterialTheme.typography.bodyLarge)
-            Text("Llamadas: sin configurar", style = MaterialTheme.typography.bodyLarge)
+            Text(if (calls.state.active) "Llamadas: identificación activada" else "Llamadas: sin configurar", style = MaterialTheme.typography.bodyLarge)
         }
         if (step == 1) AccountCard(account, onSignIn, onSignOut, onRetryAccount)
         else if (step == 2) GmailPanel(gmail, onConnectGmail, onSyncGmail, onDisconnectGmail)
-        else page.action?.let {
+        else if (step == 3) CallRoleContent(calls)
+        else if (step == 5) CallNoticeContent(calls)
+        else if (step != 4) page.action?.let {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 PrimaryButton(it, {}, enabled = false)
                 Text("Disponible próximamente", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -48,7 +51,7 @@ fun OnboardingScreen(step: Int, saving: Boolean, onNext: () -> Unit, onBack: () 
         }
         if ((step == 1 && account.account == null) || (step == 2 && !gmail.verified)) {
             SecondaryButton(if (saving) "Guardando…" else page.next, onNext, enabled = !saving && !account.busy && !gmail.busy)
-        } else PrimaryButton(if (saving) "Guardando…" else if (step == 1 || (step == 2 && gmail.verified)) "Continuar" else page.next, onNext, enabled = !saving && !account.busy)
+        } else PrimaryButton(if (saving) "Guardando…" else if (step == 1 || (step == 2 && gmail.verified) || (step == 3 && calls.state.active) || (step == 5 && calls.state.noticesEnabled)) "Continuar" else page.next, onNext, enabled = !saving && !account.busy)
         if (step > 0) TextButton(onBack, Modifier.heightIn(min = 48.dp), enabled = !saving && !account.busy) { Text("Atrás") }
     }
 }

@@ -22,7 +22,7 @@ import java.util.Locale
 fun GmailPanel(state: GmailUiState, onConnect: () -> Unit, onSync: () -> Unit, onDisconnect: () -> Unit) {
     var confirming by rememberSaveable { mutableStateOf(false) }
     HestiaCard {
-        SectionHeader("Gmail", if (state.verified) "Disponible para revisión manual" else "Sin conexión verificada")
+        SectionHeader("Gmail · revisión manual", if (state.verified) "Disponible para revisión manual" else "Sin conexión verificada")
         Text("Solo lectura. Revisamos la bandeja de entrada de esta semana cuando tú lo pides.", style = MaterialTheme.typography.bodyLarge)
         if (!state.eligible) Text("Primero inicia sesión y verifica tu cuenta de Hestia.", style = MaterialTheme.typography.bodyMedium)
         PrimaryButton(if (state.busy) when (state.operation) {
@@ -41,23 +41,29 @@ fun GmailPanel(state: GmailUiState, onConnect: () -> Unit, onSync: () -> Unit, o
         state.message?.let { Text(it, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }, style = MaterialTheme.typography.bodyLarge) }
     }
     if (confirming) AlertDialog(onDismissRequest = { confirming = false }, title = { Text("¿Desconectar Gmail?") },
-        text = { Text("Google revocará todos los permisos que Hestia tenga concedidos sobre tu cuenta, no solamente el acceso a Gmail. Borraremos la revisión local. Tu sesión de Hestia no se cerrará; Google puede pedir autorización al entrar de nuevo.") },
+        text = { Text("Google revocará todos los permisos que Hestia tenga concedidos sobre tu cuenta, no solamente el acceso a Gmail. Borraremos la revisión local y desconectaremos el seguimiento automático si existe; sus resultados guardados se conservan. Tu sesión de Hestia no se cerrará; Google puede pedir autorización al entrar de nuevo.") },
         confirmButton = { TextButton({ confirming = false; onDisconnect() }, Modifier.heightIn(min=48.dp)) { Text("Desconectar") } },
         dismissButton = { TextButton({ confirming = false }, Modifier.heightIn(min=48.dp)) { Text("Cancelar") } })
 }
 
 @Composable
-fun GmailScreen(state: GmailUiState, onConnect: () -> Unit, onSync: () -> Unit, onDisconnect: () -> Unit) {
+fun GmailScreen(state: GmailUiState, onConnect: () -> Unit, onSync: () -> Unit, onDisconnect: () -> Unit, automaticAvailable: Boolean = false, manualAvailable: Boolean = true, automatic: @Composable () -> Unit = {}) {
+    var manual by rememberSaveable { mutableStateOf(!automaticAvailable) }
+    LaunchedEffect(manualAvailable) { if(!manualAvailable)manual=false }
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 22.dp), contentPadding = PaddingValues(top = 12.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(22.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(22.dp)) {
                 Text("Revisar correos", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
-                Text("Tú decides cuándo revisar Gmail.", style = MaterialTheme.typography.bodyLarge)
-                GmailPanel(state, onConnect, onSync, onDisconnect)
+                if (!manual) automatic()
+                if (automaticAvailable && manualAvailable) SecondaryButton(if(manual) "Volver a revisión automática" else "Usar revisión manual", {manual=!manual})
+                if (manual) {
+                    Text("Revisión manual en este teléfono", style = MaterialTheme.typography.titleLarge)
+                    GmailPanel(state, onConnect, onSync, onDisconnect)
+                }
                 Text("Las señales son orientativas. Un resultado bajo no garantiza autenticidad. Nunca compartas claves ni códigos.", style = MaterialTheme.typography.bodyMedium)
             }
         }
-        val snapshot = state.snapshot
+        val snapshot = state.snapshot?.takeIf { manual }
         if (snapshot != null && snapshot.records.isEmpty() && !snapshot.partial) item { EmptyState("Sin correos para revisar", "No encontramos correos en la bandeja de entrada para el período consultado.", HestiaSymbol.MAIL) }
         items(snapshot?.records.orEmpty().sortedByDescending { it.analysis.level.ordinal }, key = { it.fingerprint }) { record ->
             HestiaCard(color = when(record.analysis.level) { EmailRisk.HIGH -> MaterialTheme.colorScheme.errorContainer; EmailRisk.MEDIUM -> MaterialTheme.colorScheme.tertiaryContainer; EmailRisk.LOW -> MaterialTheme.colorScheme.surface }) {

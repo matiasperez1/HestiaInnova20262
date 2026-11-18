@@ -1,0 +1,1 @@
+{ "apiPort": 8787, "databasePort": 55433, "workerIntervalMs": 1000 }

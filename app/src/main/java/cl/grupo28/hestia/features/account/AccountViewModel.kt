@@ -50,11 +50,12 @@ class AccountViewModel(private val repository: AuthRepository, private val picke
             finally { mutableState.value = repository.state.value.copy(busy = false) }
         }
     }
-    fun signOut() {
+    fun signOut(deviceWarning: String? = null) {
         if (action?.isActive == true) return
         action = viewModelScope.launch {
             try {
                 repository.signOut()
+                if(deviceWarning!=null) repository.showMessage(repository.state.value.message.orEmpty()+" "+deviceWarning)
                 if (repository.state.value.account == null) {
                     try { picker.clear() }
                     catch (cancelled: CancellationException) { throw cancelled }

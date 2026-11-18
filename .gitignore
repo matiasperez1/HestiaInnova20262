@@ -22,3 +22,15 @@ service-account*.json
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Backend local outputs
+**/node_modules/
+backend/dist/
+backend/coverage/
+
+# Optional public Firebase client configuration; supply locally per environment
+/app/google-services.json
+/backend/.env
+
+# Isolated synthetic LOCAL_DEMO PostgreSQL files/logs; never credentials or real mail
+/backend/.local-demo/

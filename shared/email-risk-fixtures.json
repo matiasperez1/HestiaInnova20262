@@ -1,0 +1,110 @@
+[
+  {
+    "name": "ordinary",
+    "subject": "Almuerzo familiar",
+    "body": "Nos vemos mañana",
+    "sender": "a@example.org",
+    "replyTo": "",
+    "score": 0,
+    "level": "LOW"
+  },
+  {
+    "name": "education",
+    "subject": "Seguridad",
+    "body": "Nunca compartas claves ni códigos. Revisa tus cuentas.",
+    "sender": "",
+    "replyTo": "",
+    "score": 0,
+    "level": "LOW"
+  },
+  {
+    "name": "credentials",
+    "subject": "Actualiza tu contraseña",
+    "body": "",
+    "sender": "",
+    "replyTo": "",
+    "score": 35,
+    "level": "MEDIUM"
+  },
+  {
+    "name": "institution",
+    "subject": "Banco urgente",
+    "body": "Ingresa tu clave en http://bit.ly/revisar",
+    "sender": "a@bank.cl",
+    "replyTo": "a@other.cl",
+    "score": 100,
+    "level": "HIGH"
+  },
+  {
+    "name": "prepayment",
+    "subject": "Premio",
+    "body": "Paga para liberar tu premio",
+    "sender": "",
+    "replyTo": "",
+    "score": 30,
+    "level": "MEDIUM"
+  },
+  {
+    "name": "numeric",
+    "subject": "Revisa http://192.168.1.1",
+    "body": "",
+    "sender": "",
+    "replyTo": "",
+    "score": 35,
+    "level": "MEDIUM"
+  },
+  {
+    "name": "idn",
+    "subject": "https://xn--banco-9za.cl",
+    "body": "",
+    "sender": "",
+    "replyTo": "",
+    "score": 15,
+    "level": "LOW"
+  },
+  {
+    "name": "mixed warning",
+    "subject": "Nunca compartas claves.",
+    "body": "Ingresa tu clave ahora mismo",
+    "sender": "",
+    "replyTo": "",
+    "score": 35,
+    "level": "MEDIUM"
+  },
+  {
+    "name": "urgency",
+    "subject": "ÚLTIMO PLAZO",
+    "body": "Deposita para activar el crédito",
+    "sender": "",
+    "replyTo": "",
+    "score": 45,
+    "level": "MEDIUM"
+  },
+  {
+    "name": "short",
+    "subject": "https://tinyurl.com/a",
+    "body": "",
+    "sender": "",
+    "replyTo": "",
+    "score": 15,
+    "level": "LOW"
+  },
+  {
+    "name": "literal short IP parity",
+    "subject": "http://127.1",
+    "body": "",
+    "sender": "",
+    "replyTo": "",
+    "score": 15,
+    "level": "LOW"
+  },
+  {
+    "name": "Unicode IDN",
+    "subject": "https://bánco.cl",
+    "body": "",
+    "sender": "",
+    "replyTo": "",
+    "score": 15,
+    "level": "LOW"
+  }
+]

@@ -37,7 +37,7 @@ Sans serif nativa: pantalla 28–32 sp, tarjetas 20–22 sp, cuerpo 18 sp, secun
 
 Conservar AGP 9.5.1, Gradle 9.6.0, JDK 25, Kotlin integrado de AGP 9, compileSdk/targetSdk 37 y minSdk 29. Sin actualizaciones masivas ni rutas locales compartidas.
 
-Kotlin, Compose, Material 3, Navigation Compose, ViewModel/StateFlow y DataStore. Room/WorkManager solo cuando una función real lo requiera. ETAPA 2A incorpora cuenta Google mediante Credential Manager y Supabase Auth; se verificó una sesión real restaurada. ETAPA 2B incorpora autorización Gmail y revisión manual local, pendiente de configurar Gmail API/scope y probar el buzón real. PostgreSQL de aplicación y llamadas siguen siendo integraciones futuras.
+Kotlin, Compose, Material 3, Navigation Compose, ViewModel/StateFlow y DataStore. Room/WorkManager solo cuando una función real lo requiera. ETAPA 2A incorpora cuenta Google mediante Credential Manager y Supabase Auth; se verificó una sesión real restaurada. ETAPA 2B incorpora autorización Gmail y revisión manual local, pendiente de configurar Gmail API/scope y probar el buzón real. La ETAPA 2C prepara PostgreSQL de aplicación y Gmail automático; despliegue y prueba real pendientes. Llamadas siguen siendo futuras.
 
 - `core`: tema, componentes, accesibilidad, navegación y estado compartido.
 - `features/summary`, `education`, `family`: las tres funciones principales.
@@ -90,8 +90,37 @@ Compila, tiene pruebas adecuadas, errores y estados reales, interfaz accesible y
 Mantener login Google separado de Gmail. Solicitar solo identidad básica con Credential Manager; intercambio de ID token y nonce validado en Supabase Auth. Nunca mostrar como autenticada una identidad obtenida solo del selector. Tokens cifrados con Android Keystore en noBackupFilesDir; sin logs ni secretos administrativos en APK. Cierre local incluso sin red, explicando si no se confirmó la revocación remota. Contactos, lecciones y preferencias siguen siendo locales al dispositivo y se conservan al cerrar/cambiar de cuenta. No crear tablas ni políticas RLS vacías. Ver docs/ETAPA_2A_AUTH.md para configurar y validar los servicios.
 
 
-## Gmail — ETAPA 2B
+## Gmail — ETAPA 2B (modo manual conservado)
 
 Autorización incremental con AuthorizationClient y gmail.readonly, ligada a la cuenta de Hestia y verificada con users.getProfile. Sin tokens Gmail persistidos, client secret, autorización offline ni backend de correos. Revisión manual de INBOX/semana local, límite 200 mensajes y 10 páginas explícito; deduplicar y preservar resultados anteriores ante errores. Cuerpos solo en memoria; sin endpoints de adjuntos ni apertura de enlaces. Metadatos y resultados mínimos cifrados con Keystore/noBackupFilesDir, aislados por propietario y eliminados al desconectar/cambiar/cerrar cuenta.
 
 Mostrar resultados históricos como tales; nunca confundir cero con fuente no consultada, revisión parcial con cobertura completa ni Gmail con llamadas activas. Score heurístico interno, categorías y explicaciones sin porcentajes ni autenticidad garantizada. Google revokeAccess revoca todos los scopes de Hestia: explicarlo antes y distinguir desconexión local de revocación remota confirmada. Ver docs/ETAPA_2B_GMAIL.md. No ejecutar pruebas que desinstalen o borren datos del dispositivo con la sesión real sin un entorno de prueba separado.
+
+
+## Gmail automático — ETAPA 2C (alcance vigente)
+
+La ETAPA 2C autoriza backend Node 24 LTS/TypeScript, API Cloud Run con JWT Supabase, worker privado IAM/OIDC, Gmail watch + Pub/Sub, reconciliación/renovación Scheduler y FCM para HIGH. Este permiso reemplaza la prohibición de autorización offline y backend de correos de 2B **solo en el modo automático con consentimiento explícito**; la revisión manual local se conserva. No iniciar llamadas/ETAPA 3.
+
+requestOfflineAccess usa el cliente web existente; serverAuthCode de un uso solo en memoria y HTTPS al backend. Identidad siempre desde Supabase Auth verificado y comparada con perfil Gmail. Refresh cifrado Cloud KMS AES-256-GCM con AAD del UUID, ciphertext privado en Supabase, secretos web/DB únicamente Secret Manager, identidades runtime ADC sin claves JSON. Access tokens solo memoria. Nada de cuerpos completos, adjuntos, tokens ni contenido privado en logs.
+
+Watch INBOX comienza desde la activación, sin barrido histórico inicial. Cursor solo tras todas las páginas; leases cercados y unicidad propietario/hash. Renovar watch no adelanta el cursor. Historial 404: recuperación acotada a semana local actual y barrera previa. Retención eventos 30 días, RLS propietario SELECT y escrituras solo rol backend; conexiones/dispositivos/outbox privados. LOW sin asunto/remitente/score/razones. HIGH aviso genérico con identificadores opacos; MEDIUM en app. La selección de alerta comprueba nuevamente propiedad.
+
+Firebase opcional: compilar sin google-services.json, sin configuración ficticia ni auto-init previo al consentimiento. POST_NOTIFICATIONS independiente; rechazo mantiene alertas en app. Cerrar sesión desvincula avisos de este teléfono y conserva los datos locales según las reglas de 2A; no detiene seguimiento remoto hasta Desconectar. Desconectar elimina credenciales y dispositivos, permite confirmar borrado de eventos y distingue revocación remota no confirmada. Cascada de cuenta elimina datos locales del servidor, no revoca por sí sola Google.
+
+Conservar play-services-auth 21.4.0: requestOfflineAccess(String) disponible, setPrompt no. Falta refresh → renovación explícita mediante revocación confirmada y nueva autorización; sin overload deprecated ni consentimiento forzado en cada revisión. Testing puede exigir reconexión a los siete días. No cambiar OAuth a Production ni prometer verificación/CASA.
+
+No desplegar, crear recursos facturables, aplicar SQL remoto, modificar credenciales ignoradas ni hacer commit/push sin autorización. Scripts entregados muestran plan por defecto; no se ejecutaron contra la nube. Código local no equivale a integración real. Configuración y validación: [ETAPA 2C](docs/ETAPA_2C_GMAIL_AUTOMATICO.md).
+
+
+## ETAPA 2C.1 — LOCAL_DEMO (alcance vigente, sin costos)
+
+Se autoriza una demostración local explícita con datos sintéticos identificados como DEMO LOCAL, sin reemplazar la implementación 2C. PostgreSQL local ya instalado, API y Worker Node separados, cola persistente y adaptadores locales que reutilizan GmailService, parser MIME, motor y almacenamiento/contadores. Identidades demo del servidor, separadas de Supabase; nunca OAuth ni refresh tokens reales. No se inicializa Firebase ni se consulta Google/Supabase en la demo.
+
+Controles/transporte HTTP y permiso ACCESS_LOCAL_NETWORK para Android 17 exclusivamente debug. Release sin controles ni acceso HTTP local. AutomaticGateway/AutomaticApi y el mismo ViewModel; cifras sintéticas nunca se suman a Gmail real. Revisión manual 2B y sesión cifrada se conservan; se vuelve a ellas eligiendo modo real explícitamente. Avisos HIGH en bandeja simulada, MEDIUM solo alerta en app, LOW solo conteo. No prometer recepción con app cerrada ni representar simulaciones como protecciones reales.
+
+Prohibido habilitar facturación, contratar servicios, crear recursos Cloud, ejecutar scripts de despliegue o -Execute durante esta etapa. Sin software adicional, modificaciones de secrets.properties/OAuth, commits, push ni ETAPA 3. Ver docs/ETAPA_2C1_LOCAL_DEMO.md. Las prohibiciones históricas de datos ficticios no impiden esta demo explícita y rotulada; siguen vigentes para el producto real.
+
+
+## ETAPA 2C.2 — Avisos locales en segundo plano (autorizada)
+
+Extensión de LOCAL_DEMO exclusiva de debug: servicio foreground dataSync iniciado explícitamente, avisos Android locales HIGH sintéticos y cursor local por identidad. No usa FCM, Gmail, OAuth ni servicios externos; el flujo real se conserva. Sin BOOT_COMPLETED ni excepciones de batería. Android puede detener o retrasar el servicio, incluyendo Doze y el límite dataSync; no prometer seguimiento permanente. Ver docs/ETAPA_2C2_BACKGROUND_DEMO_NOTIFICATIONS.md. Preservar 2C.1 como documento histórico. No habilitar facturación, modificar credenciales, desplegar, iniciar ETAPA 3 ni hacer commit/push.

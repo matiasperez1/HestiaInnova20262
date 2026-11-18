@@ -1,0 +1,35 @@
+{
+  "name": "hestia-gmail-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <27"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test dist/test/*.test.js",
+    "start:api": "node dist/src/api-main.js",
+    "start:worker": "node dist/src/worker-main.js",
+    "check": "tsc --noEmit -p tsconfig.json",
+    "demo:start": "npm run build && node dist/src/demo/launcher.js",
+    "demo:prepare": "npm run build && node dist/src/demo/launcher.js --prepare-only",
+    "demo:api": "node dist/src/demo/api-main.js",
+    "demo:worker": "node dist/src/demo/worker-main.js",
+    "demo:emit": "node dist/src/demo/emit.js"
+  },
+  "dependencies": {
+    "@google-cloud/kms": "6.3.0",
+    "@google-cloud/pubsub": "6.4.1",
+    "firebase-admin": "14.5.1",
+    "google-auth-library": "11.3.4",
+    "luxon": "3.7.2",
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@types/luxon": "3.7.6",
+    "@types/node": "26.6.6",
+    "@types/pg": "8.23.1",
+    "typescript": "7.0.2"
+  }
+}

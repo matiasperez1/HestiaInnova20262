@@ -74,7 +74,7 @@ Google/Supabase Auth separado de Gmail OAuth gmail.readonly. No permisos de env�
 
 Llamadas: rol, número entrante disponible, normalización, caché local y respuesta dentro de cinco segundos. Sin red en el servicio, audio ni bloqueo automático. El número puede ser suplantado.
 
-Motor determinista y explicable; score heurístico, no probabilidad calibrada. Eventos mínimos sin contenido completo del correo. Backend futuro con RLS, claves públicas de cliente y sin secretos en APK. Notificaciones locales antes de cualquier push, sin avisos a contactos no autorizados.
+Motor determinista y explicable; score heurístico, no probabilidad calibrada. Eventos mínimos sin contenido completo del correo. ETAPA 2C autoriza backend Gmail con RLS y FCM para HIGH; sin secretos en APK ni avisos a contactos. Ver el alcance 2C vigente al final de este documento.
 
 ## 8. Aceptación de ETAPA 1.1
 
@@ -102,3 +102,27 @@ Sin sincronizar contactos/lecciones ni crear tablas: permanecen locales, incluso
 Autorización independiente gmail.readonly con cuenta Google fijada y perfil Gmail verificado. Acceso desde onboarding, Ajustes y detalle Revisar correos bajo Resumen; se mantienen tres pestañas. Conectar no lee mensajes: revisar es una acción manual separada. Procesar INBOX de semana actual, con límites explícitos, reglas locales explicables y resultados persistidos cifrados. Sin cuerpos ni tokens Gmail en backend; sin envío/modificación/borrado, notificaciones, caché de adjuntos ni ejecución automática.
 
 Las cifras corresponden a la última revisión manual de esa semana; no al historial total ni a eventos acumulados. Cero exige consulta exitosa. Errores mantienen el resultado anterior con fecha/alcance visible; revocaciones y cuentas distintas no generan nueva conexión verificada. Desconectar confirma el alcance global de revokeAccess de Google y elimina resultados locales. La prueba real sigue pendiente mientras Gmail API/scope no estén configurados; no confundir tests con buzón real.
+
+
+## 11. ETAPA 2C — Gmail automático (alcance vigente)
+
+La ETAPA 2C autoriza backend Node 24 LTS/TypeScript, API Cloud Run con JWT Supabase, worker privado IAM/OIDC, Gmail watch + Pub/Sub, reconciliación/renovación Scheduler y FCM para HIGH. Este permiso reemplaza la prohibición de autorización offline y backend de correos de 2B **solo en el modo automático con consentimiento explícito**; la revisión manual local se conserva. No iniciar llamadas/ETAPA 3.
+
+requestOfflineAccess usa el cliente web existente; serverAuthCode de un uso solo en memoria y HTTPS al backend. Identidad siempre desde Supabase Auth verificado y comparada con perfil Gmail. Refresh cifrado Cloud KMS AES-256-GCM con AAD del UUID, ciphertext privado en Supabase, secretos web/DB únicamente Secret Manager, identidades runtime ADC sin claves JSON. Access tokens solo memoria. Nada de cuerpos completos, adjuntos, tokens ni contenido privado en logs.
+
+Watch INBOX comienza desde la activación, sin barrido histórico inicial. Cursor solo tras todas las páginas; leases cercados y unicidad propietario/hash. Renovar watch no adelanta el cursor. Historial 404: recuperación acotada a semana local actual y barrera previa. Retención eventos 30 días, RLS propietario SELECT y escrituras solo rol backend; conexiones/dispositivos/outbox privados. LOW sin asunto/remitente/score/razones. HIGH aviso genérico con identificadores opacos; MEDIUM en app. La selección de alerta comprueba nuevamente propiedad.
+
+Firebase opcional: compilar sin google-services.json, sin configuración ficticia ni auto-init previo al consentimiento. POST_NOTIFICATIONS independiente; rechazo mantiene alertas en app. Cerrar sesión desvincula avisos de este teléfono y conserva sesión/datos según las reglas de 2A; no detiene seguimiento remoto hasta Desconectar. Desconectar elimina credenciales y dispositivos, permite confirmar borrado de eventos y distingue revocación remota no confirmada. Cascada de cuenta elimina datos locales del servidor, no revoca por sí sola Google.
+
+Conservar play-services-auth 21.4.0: requestOfflineAccess(String) disponible, setPrompt no. Falta refresh → renovación explícita mediante revocación confirmada y nueva autorización; sin overload deprecated ni consentimiento forzado en cada revisión. Testing puede exigir reconexión a los siete días. No cambiar OAuth a Production ni prometer verificación/CASA.
+
+No desplegar, crear recursos facturables, aplicar SQL remoto, modificar credenciales ignoradas ni hacer commit/push sin autorización. Scripts entregados muestran plan por defecto; no se ejecutaron contra la nube. Código local no equivale a integración real. Configuración y validación: [ETAPA 2C](docs/ETAPA_2C_GMAIL_AUTOMATICO.md).
+
+
+## ETAPA 2C.1 — LOCAL_DEMO (alcance vigente, sin costos)
+
+Se autoriza una demostración local explícita con datos sintéticos identificados como DEMO LOCAL, sin reemplazar la implementación 2C. PostgreSQL local ya instalado, API y Worker Node separados, cola persistente y adaptadores locales que reutilizan GmailService, parser MIME, motor y almacenamiento/contadores. Identidades demo del servidor, separadas de Supabase; nunca OAuth ni refresh tokens reales. No se inicializa Firebase ni se consulta Google/Supabase en la demo.
+
+Controles/transporte HTTP y permiso ACCESS_LOCAL_NETWORK para Android 17 exclusivamente debug. Release sin controles ni acceso HTTP local. AutomaticGateway/AutomaticApi y el mismo ViewModel; cifras sintéticas nunca se suman a Gmail real. Revisión manual 2B y sesión cifrada se conservan; se vuelve a ellas eligiendo modo real explícitamente. Avisos HIGH en bandeja simulada, MEDIUM solo alerta en app, LOW solo conteo. No prometer recepción con app cerrada ni representar simulaciones como protecciones reales.
+
+Prohibido habilitar facturación, contratar servicios, crear recursos Cloud, ejecutar scripts de despliegue o -Execute durante esta etapa. Sin software adicional, modificaciones de secrets.properties/OAuth, commits, push ni ETAPA 3. Ver docs/ETAPA_2C1_LOCAL_DEMO.md. Las prohibiciones históricas de datos ficticios no impiden esta demo explícita y rotulada; siguen vigentes para el producto real.

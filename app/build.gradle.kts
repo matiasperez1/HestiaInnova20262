@@ -6,6 +6,26 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+// Firebase public Android config is optional; no fabricated values or Google Services plugin.
+val firebaseFile = file("google-services.json")
+val firebaseConfig = if (firebaseFile.exists()) groovy.json.JsonSlurper().parse(firebaseFile) as Map<*, *> else emptyMap<Any, Any>()
+val firebaseClient = (firebaseConfig["client"] as? List<*>)?.mapNotNull { it as? Map<*, *> }?.firstOrNull { client ->
+    ((client["client_info"] as? Map<*, *>)?.get("android_client_info") as? Map<*, *>)?.get("package_name") == "cl.grupo28.hestia"
+}
+require(!firebaseFile.exists() || firebaseClient != null) { "Firebase Android package must be cl.grupo28.hestia" }
+fun firebaseValue(key: String): String {
+    val info = firebaseConfig["project_info"] as? Map<*, *>
+    val value = when (key) {
+        "APP_ID" -> (firebaseClient?.get("client_info") as? Map<*, *>)?.get("mobilesdk_app_id")
+        "API_KEY" -> ((firebaseClient?.get("api_key") as? List<*>)?.firstOrNull() as? Map<*, *>)?.get("current_key")
+        "PROJECT_ID" -> info?.get("project_id")
+        "SENDER_ID" -> info?.get("project_number")
+        else -> null
+    }?.toString().orEmpty()
+    require(value.matches(Regex("[A-Za-z0-9_:.\\-]*"))) { "Invalid public Firebase configuration" }
+    return "\"$value\""
+}
+
 val authProperties = Properties().apply {
     val source = rootProject.file("secrets.properties")
     if (source.exists()) source.inputStream().use { load(it) }
@@ -15,7 +35,7 @@ fun authValue(name: String): String {
     require(value.isBlank() || when (name) {
         "SUPABASE_PUBLISHABLE_KEY" -> value.matches(Regex("sb_publishable_[A-Za-z0-9_-]+"))
         "GOOGLE_WEB_CLIENT_ID" -> value.endsWith(".apps.googleusercontent.com")
-        "SUPABASE_URL" -> runCatching {
+        "SUPABASE_URL", "HESTIA_API_URL" -> runCatching {
             val uri = URI(value)
             uri.scheme == "https" && !uri.host.isNullOrBlank() && uri.userInfo == null &&
                 uri.query == null && uri.fragment == null && uri.path.orEmpty() in listOf("", "/")
@@ -41,10 +61,20 @@ android {
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", authValue("SUPABASE_PUBLISHABLE_KEY"))
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", authValue("GOOGLE_WEB_CLIENT_ID"))
 
+        buildConfigField("String", "HESTIA_API_URL", authValue("HESTIA_API_URL"))
+        listOf("APP_ID", "API_KEY", "PROJECT_ID", "SENDER_ID").forEach { buildConfigField("String", "FIREBASE_$it", firebaseValue(it)) }
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
+        debug {
+            val demo = groovy.json.JsonSlurper().parse(rootProject.file("backend/demo.config.json")) as Map<*, *>
+            val port=(demo["apiPort"] as Number).toInt()
+            require(port in 1024..65535)
+            buildConfigField("String","LOCAL_DEMO_API_URL","\"http://10.0.2.2:$port\"")
+            buildConfigField("boolean","LOCAL_DEMO_DEFAULT",(providers.environmentVariable("LOCAL_DEMO").orNull == "true").toString())
+        }
         release {
             optimization {
                 enable = true
@@ -62,7 +92,11 @@ android {
     }
 }
 
+android.sourceSets.getByName("test").resources.srcDir(rootProject.file("shared"))
+
 dependencies {
+    implementation(libs.firebase.messaging)
+    implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.google.authorization)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.google)

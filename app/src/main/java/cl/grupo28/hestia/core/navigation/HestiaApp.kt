@@ -1,6 +1,9 @@
 package cl.grupo28.hestia.core.navigation
 
 import android.content.Intent
+import cl.grupo28.hestia.domain.auth.AuthState
+import cl.grupo28.hestia.features.automatic.*
+import kotlinx.coroutines.launch
 import cl.grupo28.hestia.features.account.AccountViewModel
 import cl.grupo28.hestia.features.gmail.*
 import androidx.core.net.toUri
@@ -44,11 +47,20 @@ private val destinations = listOf(
 )
 
 @Composable
-fun HestiaApp(viewModel: HestiaViewModel, accountViewModel: AccountViewModel, gmailViewModel: GmailViewModel, authorizeGmail: (String, String) -> Unit, revokeGmail: (String, (Boolean) -> Unit) -> Unit) {
+fun HestiaApp(viewModel: HestiaViewModel, accountViewModel: AccountViewModel, gmailViewModel: GmailViewModel, authorizeGmail: (String, String) -> Unit, revokeGmail: (String, (Boolean) -> Unit) -> Unit, automaticModel: AutomaticViewModel? = null, authorizeAutomatic: (String,String)->Unit = {_,_->}, notificationEvent: Pair<String,String>? = null, consumedNotification: ()->Unit = {}) {
+    val scope = rememberCoroutineScope()
+    val logout: () -> Unit = { scope.launch { val warning=automaticModel?.beforeLogout(); accountViewModel.signOut(warning) } }
+    val revokeManual: (String,(Boolean)->Unit)->Unit = { email, done -> scope.launch {
+        val backend=automaticModel?.disconnectForManualRevocation()
+        revokeGmail(email) { native -> done(native || backend==true) }
+    } }
     val state by viewModel.state.collectAsState()
-    val account by accountViewModel.state.collectAsState()
+    val realAccount by accountViewModel.state.collectAsState()
+    val demoMode by AutomaticEnvironmentFactory.mode(LocalContext.current).collectAsState()
+    val account=if(demoMode)AuthState(false,message="DEMO LOCAL: la cuenta real no se utiliza en este modo.")else realAccount
     val context = LocalContext.current
-    val gmail by gmailViewModel.state.collectAsState()
+    val realGmail by gmailViewModel.state.collectAsState()
+    val gmail=if(demoMode)GmailUiState()else realGmail
     HestiaTheme(state.settings.display) {
         if (state.loading) {
             Surface(Modifier.fillMaxSize()) { Box(Modifier.systemBarsPadding(), contentAlignment = Alignment.Center) { LoadingState("Abriendo Hestia…") } }
@@ -57,10 +69,10 @@ fun HestiaApp(viewModel: HestiaViewModel, accountViewModel: AccountViewModel, gm
         } else if (!state.settings.onboardingComplete) {
             BackHandler(state.settings.onboardingStep > 0 && !state.saving && !account.busy) { viewModel.previousOnboarding() }
             Scaffold(topBar = { BrandHeader() }) { padding ->
-                Box(Modifier.padding(padding)) { OnboardingScreen(state.settings.onboardingStep, state.saving, viewModel::advanceOnboarding, viewModel::previousOnboarding, account, { accountViewModel.signIn(context) }, accountViewModel::signOut, accountViewModel::retry, gmail, { gmailViewModel.begin(false, authorizeGmail) }, { gmailViewModel.begin(true, authorizeGmail) }, { gmailViewModel.disconnect(revokeGmail) }) }
+                Box(Modifier.padding(padding)) { OnboardingScreen(state.settings.onboardingStep, state.saving, viewModel::advanceOnboarding, viewModel::previousOnboarding, account, { accountViewModel.signIn(context) }, logout, accountViewModel::retry, gmail, { gmailViewModel.begin(false, authorizeGmail) }, { gmailViewModel.begin(true, authorizeGmail) }, { gmailViewModel.disconnect(revokeManual) }) }
             }
         } else {
-            MainNavigation(viewModel, accountViewModel, gmailViewModel, authorizeGmail, revokeGmail)
+            MainNavigation(viewModel, accountViewModel, gmailViewModel, authorizeGmail, revokeGmail, automaticModel, authorizeAutomatic, notificationEvent, consumedNotification)
         }
         if (state.ready && state.error != null) AlertDialog(onDismissRequest = viewModel::clearError,
             title = { Text("Revisemos este paso") }, text = { Text(state.error!!) },
@@ -74,6 +86,7 @@ private fun BrandHeader(back: (() -> Unit)? = null, settings: (() -> Unit)? = nu
         Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
             if (back != null) TextButton(back, Modifier.heightIn(min = 48.dp)) { HestiaIcon(HestiaSymbol.BACK); Spacer(Modifier.width(8.dp)); Text("Volver") }
             else Row(verticalAlignment = Alignment.CenterVertically) { HestiaMark(Modifier.size(36.dp)); Spacer(Modifier.width(8.dp)); Text("Hestia", style = MaterialTheme.typography.titleLarge) }
+            AutomaticEnvironmentBadge()
             if (settings != null) TextButton(settings, Modifier.heightIn(min = 48.dp)) {
                 HestiaIcon(HestiaSymbol.SETTINGS); Spacer(Modifier.width(6.dp)); Text("Ajustes", style = MaterialTheme.typography.labelMedium)
             }
@@ -82,11 +95,41 @@ private fun BrandHeader(back: (() -> Unit)? = null, settings: (() -> Unit)? = nu
 }
 
 @Composable
-private fun MainNavigation(viewModel: HestiaViewModel, accountViewModel: AccountViewModel, gmailViewModel: GmailViewModel, authorizeGmail: (String, String) -> Unit, revokeGmail: (String, (Boolean) -> Unit) -> Unit) {
+private fun MainNavigation(viewModel: HestiaViewModel, accountViewModel: AccountViewModel, gmailViewModel: GmailViewModel, authorizeGmail: (String, String) -> Unit, revokeGmail: (String, (Boolean) -> Unit) -> Unit, automaticModel: AutomaticViewModel? = null, authorizeAutomatic: (String,String)->Unit = {_,_->}, notificationEvent: Pair<String,String>? = null, consumedNotification: ()->Unit = {}) {
+    val scope = rememberCoroutineScope()
+    val logout: () -> Unit = { scope.launch { val warning=automaticModel?.beforeLogout(); accountViewModel.signOut(warning) } }
+    val revokeManual: (String,(Boolean)->Unit)->Unit = { email, done -> scope.launch {
+        val backend=automaticModel?.disconnectForManualRevocation()
+        revokeGmail(email) { native -> done(native || backend==true) }
+    } }
     val state by viewModel.state.collectAsState()
-    val account by accountViewModel.state.collectAsState()
-    val gmail by gmailViewModel.state.collectAsState()
+    val realAccount by accountViewModel.state.collectAsState()
+    val demoMode by AutomaticEnvironmentFactory.mode(LocalContext.current).collectAsState()
+    val account=if(demoMode)AuthState(false,message="DEMO LOCAL: la cuenta real no se utiliza en este modo.")else realAccount
+    val realGmail by gmailViewModel.state.collectAsState()
+    val gmail=if(demoMode)GmailUiState()else realGmail
     val nav = rememberNavController()
+    val notificationState = automaticModel?.state?.collectAsState()?.value
+    LaunchedEffect(notificationEvent, account.account?.id, account.verified, notificationState?.eligible, notificationState?.busy, notificationState?.demoSelected, notificationState?.demoPersona) {
+        notificationEvent?.let { (id, tag) ->
+            if (tag.startsWith("demo:")) {
+                if (automaticModel == null || !automaticModel.demoAvailable || !demoMode || notificationState?.demoPersona != tag.removePrefix("demo:")) {
+                    consumedNotification()
+                } else if (notificationState.demoSelected && notificationState.eligible && !notificationState.busy) {
+                    nav.navigate("gmail") { launchSingleTop=true }
+                    automaticModel.open(id) // gateway revalidates ownership against the authenticated demo session
+                    consumedNotification()
+                }
+            } else {
+                val owner=account.account?.id
+                if (account.verified && owner!=null) {
+                    if (AutomaticNotifications.accountTag(owner)==tag && automaticModel!=null) { nav.navigate("gmail") { launchSingleTop=true }; automaticModel.open(id) }
+                    consumedNotification()
+                } else if (demoMode) consumedNotification()
+            }
+        }
+    }
+    val automatic = automaticModel?.state?.collectAsState()?.value
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: "summary"
     val selected = when { route.startsWith("lesson") -> "education"; route == "settings" || route == "gmail" -> "summary"; else -> route }
@@ -116,15 +159,15 @@ private fun MainNavigation(viewModel: HestiaViewModel, accountViewModel: Account
         val noMotion = state.settings.display.reduceMotion
         NavHost(nav, startDestination = "summary", modifier = Modifier.padding(padding).consumeWindowInsets(padding),
             enterTransition = { if (noMotion) EnterTransition.None else fadeIn(tween(120)) }, exitTransition = { if (noMotion) ExitTransition.None else fadeOut(tween(80)) }) {
-            composable("summary") { SummaryScreen(WeekRange.current(), state.summary, gmail) { nav.navigate("gmail") } }
+            composable("summary") { SummaryScreen(WeekRange.current(), state.summary, gmail, automatic) { nav.navigate("gmail") } }
             composable("education") { EducationScreen(state.settings.completedLessons) { nav.navigate("lesson/$it") } }
             composable("family") {
                 FamilyScreen(state.settings.contacts, state.saving, viewModel::addContact, viewModel::removeContact) {
                     openExternal(context, dialIntent(it.phone), viewModel::showError)
                 }
             }
-            composable("settings") { SettingsScreen(state.settings.display, state.saving, viewModel::setDisplay, account, { accountViewModel.signIn(context) }, accountViewModel::signOut, accountViewModel::retry, gmail, { gmailViewModel.begin(false, authorizeGmail) }, { gmailViewModel.begin(true, authorizeGmail) }, { gmailViewModel.disconnect(revokeGmail) }, { nav.navigate("gmail") }) }
-            composable("gmail") { GmailScreen(gmail, { gmailViewModel.begin(false, authorizeGmail) }, { gmailViewModel.begin(true, authorizeGmail) }, { gmailViewModel.disconnect(revokeGmail) }) }
+            composable("settings") { SettingsScreen(state.settings.display, state.saving, viewModel::setDisplay, account, { accountViewModel.signIn(context) }, logout, accountViewModel::retry, gmail, { gmailViewModel.begin(false, authorizeGmail) }, { gmailViewModel.begin(true, authorizeGmail) }, { gmailViewModel.disconnect(revokeManual) }, { nav.navigate("gmail") }) }
+            composable("gmail") { GmailScreen(gmail, { gmailViewModel.begin(false, authorizeGmail) }, { gmailViewModel.begin(true, authorizeGmail) }, { gmailViewModel.disconnect(revokeManual) }, automaticAvailable = automaticModel != null, manualAvailable = !demoMode) { automaticModel?.let { AutomaticPanel(it, authorizeAutomatic, revokeGmail, account.account?.email) } } }
             composable("lesson/{id}", arguments = listOf(navArgument("id") { type = NavType.IntType })) { backStack ->
                 val lesson = lessons.firstOrNull { it.id == backStack.arguments?.getInt("id") }
                 if (lesson == null) ErrorState("No encontramos esta lección.") { openMain("education") }
@@ -133,7 +176,7 @@ private fun MainNavigation(viewModel: HestiaViewModel, accountViewModel: Account
                         if (lesson.id < lessons.size) nav.navigate("lesson/${lesson.id + 1}") { popUpTo("education") }
                         else nav.popBackStack("education", false)
                     }
-                }, { source -> openExternal(context, Intent(Intent.ACTION_VIEW, source.url.toUri()), viewModel::showError) })
+                }, { source -> if(demoMode)viewModel.showError("DEMO LOCAL: los enlaces externos no se abren durante la demostración.") else openExternal(context, Intent(Intent.ACTION_VIEW, source.url.toUri()), viewModel::showError) })
             }
         }
     }

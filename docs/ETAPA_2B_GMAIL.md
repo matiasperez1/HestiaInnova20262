@@ -95,3 +95,6 @@ Se restauró Pixel_10 y se instaló la APK final únicamente mediante `adb insta
 Lint final: **0 errores y 25 advertencias**: 11 GradleDependency, 5 NewerVersionAvailable, 7 UnusedResources, 1 ObsoleteLintCustomCheck (Lifecycle) y 1 RedundantLabel. La comprobación obsoleta de Lifecycle mantiene su limitación previa; no se actualizaron dependencias para ocultar advertencias. El ejecutor también avisa de Unsafe/protobuf; no es código de Hestia. `git diff --check` no presenta errores de espacios.
 
 La interfaz distingue comprobación de permiso, **Revisando correos**, desconexión, revisión completada/parcial y errores. No se guarda esta fase transitoria ni un token en el snapshot. No se han probado aún la autorización, consultas, revocación o limpieza del caché Google con la cuenta real: las firmas de las APIs 21.4.0 están verificadas por compilación; las pruebas instrumentales validan UI, cifrado y flujos aislados.
+
+
+> Actualización de alcance: ETAPA 2C prepara Gmail automático con backend y FCM, conservando el modo manual descrito aquí. Las limitaciones históricas se interpretan por etapa. Ver [guía 2C](ETAPA_2C_GMAIL_AUTOMATICO.md); despliegue e integración automática real siguen pendientes.

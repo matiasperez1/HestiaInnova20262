@@ -101,3 +101,6 @@ Pendiente: crear/configurar los dos proyectos externos, probar una cuenta Google
 ## Actualización al iniciar 2B
 
 Los proyectos de Supabase y Google Auth ya se configuraron. Se comprobó que Supabase responde con Google habilitado, que la configuración compilada coincide con la local y que Hestia muestra una sesión restaurada/verificada tras apertura en frío. Esta evidencia reemplaza el pendiente de crear proyectos de las notas históricas. Cierre, revocación, cancelación reales y auditoría completa siguen separados de esa comprobación. Gmail tiene autorización y configuración independientes, documentadas en ETAPA_2B_GMAIL.md.
+
+
+> Actualización de alcance: ETAPA 2C prepara Gmail automático con backend y FCM, conservando el modo manual descrito aquí. Las limitaciones históricas se interpretan por etapa. Ver [guía 2C](ETAPA_2C_GMAIL_AUTOMATICO.md); despliegue e integración automática real siguen pendientes.

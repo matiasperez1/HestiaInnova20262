@@ -2,15 +2,25 @@
 
 Aplicación Android del Grupo 28 para adultos mayores: llamadas y correos sospechosos, resumen semanal y educación antifraude. Identidad: **Hestia**, `cl.grupo28.hestia`.
 
-## Experiencia actual — ETAPA 2B
+## Demostración local — ETAPA 2C.1
+
+La arquitectura automática puede demostrarse sin servicios remotos con datos sintéticos, API/Worker Node y PostgreSQL ya instalado. Conserva la implementación 2C de producción, todavía no desplegada. No habilitar facturación ni ejecutar scripts de deploy.
+
+Desde backend en PowerShell: `$env:LOCAL_DEMO='true'`, `npm.cmd run demo:start`. En otra terminal: `npm.cmd run demo:emit -- --scenario high-risk`. Desde la raíz, compilar debug con la misma variable y JDK 25: `.\gradlew.bat assembleDebug`. Abrir Resumen → Revisar correos → DEMO LOCAL; Android 17 solicita permiso de red local exclusivo de debug. No se usa Google Auth, Gmail, KMS, Pub/Sub o FCM remotos en este modo; no se borra la sesión real.
+
+[Guía completa: comandos, escenarios, persistencia, pruebas y límites](docs/ETAPA_2C1_LOCAL_DEMO.md). Los avisos son una bandeja simulada consultada en primer plano; no son push reales. Release no incluye controles demo ni HTTP local.
+
+## Experiencia de producción — ETAPA 2C preparada
 
 Solo tres secciones: **Resumen, Aprender y Familia**. Configuración inicial de siete pasos, persistida con DataStore y reanudable. Tras finalizar el recorrido se abre Resumen en los siguientes inicios.
 
 Cuenta Google mediante Credential Manager y Supabase Auth implementada para configuración y pruebas. Supabase y Google Auth ya están configurados y se observó una sesión real restaurada y verificada. Sin configuración pública válida el acceso permanece deshabilitado; siempre se puede continuar sin cuenta. Ver [guía ETAPA 2A](docs/ETAPA_2A_AUTH.md) y `secrets.properties.example`.
 
-Gmail OAuth de solo lectura, revisión manual de INBOX semanal y análisis local ya tienen implementación y pruebas locales; falta configurar Gmail API/scope y validar con cuenta real según [guía ETAPA 2B](docs/ETAPA_2B_GMAIL.md). Identificación de llamadas y avisos siguen pendientes. Completar el asistente o iniciar sesión no activa protecciones. Solo se agrega INTERNET, sin permisos Android de ejecución. La sesión se cifra con Android Keystore y se excluye de backups. Al cerrar sesión se conservan los datos locales del teléfono.
+Gmail conserva la revisión manual 2B y añade la implementación de revisión automática 2C: autorización offline independiente, API/worker TypeScript para Cloud Run, Pub/Sub, Scheduler, KMS, SQL/RLS, resumen/alertas y FCM opcional. **La infraestructura no está desplegada ni se ha validado el flujo con Gmail/FCM reales.** Sin URL de API/Firebase auténticas, la aplicación ofrece la alternativa manual y no presenta protección automática activa. Ver [guía completa 2C](docs/ETAPA_2C_GMAIL_AUTOMATICO.md), que incluye pasos exactos para configurar y probar un correo de prueba autorizado.
 
-Resumen muestra la semana y «Sin datos» para fuentes no consultadas; después de una revisión Gmail real muestra los correos analizados y sospechosos de esa última revisión, con límites parciales explícitos. Incluye un cálculo de dominio probado para eventos futuros, sin generar eventos de demostración. El conteo futuro será de llamadas registradas por Hestia, no de todo el historial telefónico: la recepción de contactos requiere READ_CONTACTS y números privados/restringidos pueden quedar fuera. No se solicita READ_CALL_LOG.
+Se mantienen Resumen, Aprender y Familia. Resumen utiliza datos reales, separa resultados automáticos de la última revisión manual y muestra «Sin datos» para fuentes no consultadas. Las llamadas siguen pendientes. La activación automática requiere consentimiento propio: comienza desde ese momento y no revisa todo el historial. Avisos HIGH genéricos y permiso POST_NOTIFICATIONS desde Android 13; rechazarlo no detiene las alertas dentro de la app. Cerrar sesión desvincula avisos del teléfono; Desconectar detiene el seguimiento del servidor.
+
+Sesión Supabase cifrada con Keystore y excluida de backups, preservada en esta actualización. No se modificaron secrets.properties ni los clientes OAuth existentes. No se desplegaron recursos de pago, no se aplicaron migraciones remotas ni se hicieron commits/push.
 
 Familia guarda contactos de emergencia en el teléfono: entrada manual, iniciales, eliminación confirmada y apertura del marcador mediante ACTION_DIAL. No necesita permisos de agenda ni CALL_PHONE. No hay backend, invitaciones ni avisos a terceros. Aprender contiene cinco lecciones propias con preguntas, progreso local y enlaces de CMF, SERNAC, ChileAtiende y BCN.
 
@@ -22,7 +32,7 @@ Kotlin, Compose/Material 3, Navigation Compose, ViewModel/StateFlow y repositori
 
 Dependencia directa incorporada en ETAPA 1.1: DataStore Preferences **1.1.7**. Se mantienen Navigation Compose 2.9.4, Espresso 3.7.0 (pruebas), AGP 9.5.1, Gradle 9.6.0, Kotlin/Compose plugin 2.2.10, compileSdk/targetSdk 37 y minSdk 29.
 
-Autenticación 2A agrega Credential Manager 1.5.0, su proveedor Google, Google ID 1.1.1 y OkHttp 4.12.0. ETAPA 2B añade play-services-auth 21.4.0 para autorización incremental y revocación, sin actualizar las versiones de AGP/Gradle/Kotlin/SDK. Las pruebas usan coroutines-test 1.8.1, MockWebServer 4.12.0 y JSON 20240303. Supabase se consume mediante su API Auth REST, sin módulos de datos adicionales ni cambios de Kotlin. La autorización Gmail solicita únicamente gmail.readonly, de forma separada del inicio de sesión. No se envían cuerpos ni resultados a Supabase.
+Autenticación 2A agrega Credential Manager 1.5.0, su proveedor Google, Google ID 1.1.1 y OkHttp 4.12.0. ETAPA 2B añade play-services-auth 21.4.0 para autorización incremental y revocación, sin actualizar las versiones de AGP/Gradle/Kotlin/SDK. Las pruebas usan coroutines-test 1.8.1, MockWebServer 4.12.0 y JSON 20240303. Supabase se consume mediante su API Auth REST, sin módulos de datos adicionales ni cambios de Kotlin. La autorización Gmail solicita únicamente gmail.readonly, de forma separada del inicio de sesión. En 2B los resultados quedan locales. En 2C solo se guardan metadatos mínimos/resultados con RLS y consentimiento; nunca cuerpos completos o adjuntos. Firebase Messaging 25.0.1 y coroutines-play-services 1.8.1 son las dependencias nuevas Android; no se actualizaron las existentes.
 
 ## Java y validación
 
@@ -54,3 +64,10 @@ APK: `app/build/outputs/apk/debug/app-debug.apk`. Instalar con `adb install -r` 
 Los contactos, preferencias y progreso se almacenan en el espacio privado local de la app mediante DataStore; no se transmiten ni se registran en logs. La lectura en voz alta sigue pendiente. Falta auditoría completa con TalkBack, Android 10 y dispositivos físicos.
 
 Se conserva la limitación de lint de Lifecycle: algunas comprobaciones usan APIs obsoletas y se omiten; no impide compilar. No se actualizan dependencias solo para ocultar advertencias. No se realizaron commits ni push.
+
+
+## Backend 2C y despliegue pendiente
+
+`backend/` contiene dos puntos de entrada y Dockerfiles separados, lockfile y pruebas. Node 24 LTS; instalar con `npm ci --ignore-scripts`, comprobar con `npm test`. La prueba SQL usa solo un PostgreSQL local aislado. `supabase/migrations/202611160001_gmail_automatic.sql` crea los objetos Gmail y protege el acceso por propietario; debe revisarse antes de aplicarla en Supabase real. `deploy/Prepare-Gcp.ps1` y `deploy/Deploy-Services.ps1` solo muestran un plan sin -Execute. No se han ejecutado contra Google Cloud.
+
+Configurar HESTIA_API_URL pública en la sesión de compilación y aportar app/google-services.json auténtico del proyecto existente. El archivo es opcional, ignorado y no se fabricó uno; se inicializa FirebaseOptions explícitamente después del consentimiento. Secretos de servidor en Secret Manager y refresh cifrado por Cloud KMS; ninguno se añade al APK. Testing OAuth puede caducar a los siete días; producción requiere evaluar verificación de scope restringido/CASA. Ver la guía 2C para IAM, secretos, SQL, Firebase, validación y límites.

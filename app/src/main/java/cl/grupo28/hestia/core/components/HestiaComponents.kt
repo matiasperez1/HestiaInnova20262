@@ -58,8 +58,8 @@ fun IconTile(symbol: HestiaSymbol, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun StatusPill(text: String, warning: Boolean = false) {
-    Surface(shape = RoundedCornerShape(10.dp), color = if (warning) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer) {
+fun StatusPill(text: String, warning: Boolean = false, modifier: Modifier = Modifier) {
+    Surface(modifier, shape = RoundedCornerShape(10.dp), color = if (warning) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer) {
         Text(text, Modifier.padding(horizontal = 10.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium,
             color = if (warning) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer)
     }
@@ -92,12 +92,23 @@ fun ErrorState(message: String, onRetry: () -> Unit) {
 }
 
 @Composable
-fun Page(title: String, subtitle: String, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun Page(
+    title: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+    prominentSubtitle: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp).padding(top = 12.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(22.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(title, style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
-            Text(subtitle, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                subtitle,
+                modifier = if (prominentSubtitle) Modifier.semantics { heading() } else Modifier,
+                style = if (prominentSubtitle) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.bodyLarge,
+                color = if (prominentSubtitle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         content()
     }

@@ -33,6 +33,9 @@ import cl.grupo28.hestia.core.theme.HestiaTheme
 import cl.grupo28.hestia.data.DataStoreSettingsRepository
 import cl.grupo28.hestia.features.calls.CallRiskCard
 import cl.grupo28.hestia.features.calls.CallRiskDetails
+import cl.grupo28.hestia.domain.HelpRequest
+import cl.grupo28.hestia.domain.HelpTopic
+import cl.grupo28.hestia.features.family.TrustHelpDialog
 import java.util.Locale
 import java.util.UUID
 
@@ -105,6 +108,7 @@ class CallerIdentificationActivity : ComponentActivity() {
         setContent {
             val preferences by settings.collectAsState(initial = null)
             var details by remember { mutableStateOf(false) }
+            var help by remember { mutableStateOf(false) }
             BackHandler { item.dismissed = true; finish() }
             HestiaTheme(preferences?.display ?: DisplayPreferences()) {
                 Surface(shape = MaterialTheme.shapes.extraLarge, tonalElevation = 4.dp) {
@@ -116,7 +120,13 @@ class CallerIdentificationActivity : ComponentActivity() {
                         SecondaryButton("Cerrar aviso", { item.dismissed = true; finish() })
                     }
                 }
-                if (details) CallRiskDetails(number, item.synthetic, { details = false })
+                if (help) {
+                    TrustHelpDialog(HelpRequest(HelpTopic.CALL_WARNING, demonstration = item.synthetic),
+                        { help = false }, callInProgress = true)
+                } else if (details) {
+                    val unlocked = !getSystemService(android.app.KeyguardManager::class.java).isKeyguardLocked
+                    CallRiskDetails(number, item.synthetic, { details = false }, if (unlocked) { { help = true } } else null)
+                }
             }
         }
     }

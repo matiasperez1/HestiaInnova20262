@@ -16,6 +16,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collect
 import cl.grupo28.hestia.core.navigation.HestiaApp
+import cl.grupo28.hestia.core.navigation.OPEN_PHONE_RECENTS_ACTION
+import cl.grupo28.hestia.core.navigation.phoneRecentsRoute
 import androidx.lifecycle.ViewModelProvider
 import cl.grupo28.hestia.core.HestiaViewModel
 import cl.grupo28.hestia.data.DataStoreSettingsRepository
@@ -26,11 +28,23 @@ class MainActivity : ComponentActivity() {
     private lateinit var automaticModel: AutomaticViewModel
     private lateinit var automaticAuthorization: AutomaticAuthorization
     private var notificationEvent by mutableStateOf<Pair<String,String>?>(null)
+    private var recentsRequested by mutableStateOf(false)
+    private fun readRecentsRequest(intent: Intent?) {
+        if (phoneRecentsRoute != null && intent?.action == OPEN_PHONE_RECENTS_ACTION) {
+            recentsRequested = true
+            intent.action = null
+        }
+    }
     private fun readNotification(intent: Intent?) {
         val id=intent?.getStringExtra("hestia_event_id"); val tag=intent?.getStringExtra("hestia_account_tag")
         if(id!=null && tag!=null && id.matches(Regex("[a-fA-F0-9-]{36}")) && (tag.matches(Regex("[a-f0-9]{64}")) || (intent.getStringExtra("hestia_type")=="DEMO_LOCAL" && tag.matches(Regex("demo:(alice|bob)"))))) notificationEvent=id to tag
     }
-    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent);if(intent.getStringExtra("hestia_account_tag")?.startsWith("demo:")!=true)setIntent(intent);readNotification(intent) }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.getStringExtra("hestia_account_tag")?.startsWith("demo:") != true) setIntent(intent)
+        readNotification(intent)
+        readRecentsRequest(intent)
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -42,8 +56,11 @@ class MainActivity : ComponentActivity() {
         automaticAuthorization=AutomaticAuthorization(this, automaticModel, savedInstanceState)
         lifecycleScope.launch { repeatOnLifecycle(Lifecycle.State.STARTED) { AutomaticEnvironmentFactory.mode(applicationContext).collect { demo -> if(demo)accountViewModel.stop() else accountViewModel.start() } } }
         readNotification(intent)
+        readRecentsRequest(intent)
         setContent {
-            HestiaApp(viewModel, accountViewModel, gmailViewModel, gmailAuthorization::authorize, gmailAuthorization::revoke, automaticModel, automaticAuthorization::authorize, notificationEvent, {notificationEvent=null})
+            HestiaApp(viewModel, accountViewModel, gmailViewModel, gmailAuthorization::authorize, gmailAuthorization::revoke,
+                automaticModel, automaticAuthorization::authorize, notificationEvent, { notificationEvent = null },
+                recentsRequested, { recentsRequested = false })
         }
     }
     override fun onSaveInstanceState(outState: Bundle) { gmailAuthorization.save(outState); automaticAuthorization.save(outState); super.onSaveInstanceState(outState) }

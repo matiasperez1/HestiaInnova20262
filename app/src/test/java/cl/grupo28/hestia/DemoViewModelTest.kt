@@ -38,7 +38,27 @@ class DemoViewModelTest {
  private val auth=MutableStateFlow(AuthState(true,Account("demo","DEMO LOCAL"),verified=true))
  @Test fun simulationAndDuplicateActionsUseDemoPortOnly()=runTest(dispatcher){val demo=Demo();val model=AutomaticViewModel(Api(),auth,demo=demo);advanceUntilIdle();model.emitDemo("high-risk");advanceUntilIdle();model.repeatDemo();advanceUntilIdle();assertEquals(1,demo.emitted);assertEquals(1,demo.repeated);assertTrue(model.state.value.demoSelected);assertFalse(model.state.value.status!!.active)}
  @Test fun cleanupOnlyUsesSyntheticStore()=runTest(dispatcher){val demo=Demo();val model=AutomaticViewModel(Api(),auth,demo=demo);advanceUntilIdle();model.clearDemo();advanceUntilIdle();assertEquals(1,demo.cleared);assertEquals("demo",auth.value.account!!.id)}
- @Test fun unavailableBackendIsReportedWithoutInventingCounts()=runTest(dispatcher){val model=AutomaticViewModel(Api().apply{offline=true},auth,demo=Demo());advanceUntilIdle();assertFalse(model.state.value.checked);assertNull(model.state.value.summary);assertNull(model.state.value.demoInfo);assertTrue(model.state.value.message!!.contains("DEMO LOCAL"))}
+ @Test fun unavailableBackendIsReportedWithoutInventingCounts()=runTest(dispatcher){
+  val api = Api().apply { offline = true }
+  val model = AutomaticViewModel(api,auth,demo=Demo())
+  advanceUntilIdle()
+  assertFalse(model.state.value.checked)
+  assertNull(model.state.value.summary)
+  assertNull(model.state.value.demoInfo)
+  assertEquals(ConsultationIssue.OFFLINE, model.state.value.consultationIssue)
+  api.offline = false
+  model.refresh()
+  advanceUntilIdle()
+  assertTrue(model.state.value.checked)
+  assertNull(model.state.value.consultationIssue)
+  val confirmed = model.state.value.summary
+  assertNotNull(confirmed)
+  api.offline = true
+  model.refresh()
+  advanceUntilIdle()
+  assertFalse(model.state.value.checked)
+  assertEquals(confirmed, model.state.value.summary)
+ }
  @Test fun demoCanNeverTriggerOAuthOrRealRevocation()=runTest(dispatcher){val model=AutomaticViewModel(Api(),auth,demo=Demo());advanceUntilIdle();model.begin{_,_->error("Must not authorize")};assertNull(model.disconnectForManualRevocation());assertNull(model.beforeLogout());assertFalse(model.state.value.busy)}
  @Test fun userSimulationPreemptsBackgroundPollingInsteadOfBeingDiscarded()=runTest(dispatcher){
   val api=Api();val demo=Demo();val model=AutomaticViewModel(api,auth,demo=demo);advanceUntilIdle();api.hold=CompletableDeferred();model.foreground(true);runCurrent();assertFalse(model.state.value.busy);model.emitDemo("high-risk");runCurrent();assertEquals(1,demo.emitted);model.foreground(false);api.hold!!.complete(AutomaticStatus("DEMO_LOCAL",false,null,null,"2026-11-16T00:00:00Z"));advanceUntilIdle();assertFalse(model.state.value.busy)

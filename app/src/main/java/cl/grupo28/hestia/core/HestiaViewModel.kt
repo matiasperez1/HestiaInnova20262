@@ -40,9 +40,16 @@ class HestiaViewModel(private val repository: LocalSettingsRepository) : ViewMod
 
     fun advanceOnboarding() = save { repository.setOnboardingStep((state.value.settings.onboardingStep + 1).coerceAtMost(7)) }
     fun previousOnboarding() = save { repository.setOnboardingStep((state.value.settings.onboardingStep - 1).coerceAtLeast(0)) }
-    fun addContact(name: String, phone: String, onSaved: () -> Unit) = save(onSaved) { repository.addContact(name, phone) }
+    fun saveContact(id: String?, name: String, phone: String, relationship: String, onSaved: () -> Unit) = save(onSaved) {
+        if (id == null) repository.addContact(name, phone, relationship)
+        else repository.editContact(id, name, phone, relationship)
+    }
+    fun setPrimaryContact(id: String) = save { repository.setPrimaryContact(id) }
+    fun moveContactUp(id: String) = save { repository.moveContactUp(id) }
     fun removeContact(id: String, onSaved: () -> Unit) = save(onSaved) { repository.removeContact(id) }
-    fun completeLesson(id: Int, onSaved: () -> Unit) = save(onSaved) { repository.completeLesson(id) }
+    fun openLesson(id: String, onSaved: () -> Unit) = save(onSaved) { repository.openLesson(id) }
+    fun saveLessonCheckpoint(id: String, checkpoint: LessonCheckpoint) = save { repository.saveLessonCheckpoint(id, checkpoint) }
+    fun completeLesson(id: String, onSaved: () -> Unit) = save(onSaved) { repository.completeLesson(id) }
     fun setDisplay(display: DisplayPreferences) = save { repository.setDisplay(display) }
     fun clearError() { mutableState.update { it.copy(error = null) } }
     fun showError(message: String) { mutableState.update { it.copy(error = message) } }

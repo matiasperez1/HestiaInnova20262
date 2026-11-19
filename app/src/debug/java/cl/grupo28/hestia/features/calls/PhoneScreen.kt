@@ -27,9 +27,9 @@ import cl.grupo28.hestia.features.summary.WeeklyCallCards
 import cl.grupo28.hestia.features.summary.rememberCallOverview
 
 @Composable
-internal fun PhoneScreen(calls: CallSetup, onPreview: () -> Unit) {
+internal fun PhoneScreen(calls: CallSetup, onPreview: () -> Unit, onLearnCalls: () -> Unit, startsInRecents: Boolean = false) {
     val context = LocalContext.current
-    var section by rememberSaveable { mutableStateOf(PhoneSection.HOME) }
+    var section by rememberSaveable { mutableStateOf(if (startsInRecents) PhoneSection.RECENT else PhoneSection.HOME) }
     BackHandler(section != PhoneSection.HOME) { section = PhoneSection.HOME }
     androidx.compose.runtime.key(section) {
         when (section) {
@@ -42,13 +42,13 @@ internal fun PhoneScreen(calls: CallSetup, onPreview: () -> Unit) {
             }
             PhoneSection.RECENT -> Page("Recientes", "Llamadas atendidas por el teléfono de Hestia.") {
                 SecondaryButton("Volver a Teléfono", { section = PhoneSection.HOME })
-                PhoneRecentList({ context.openHestiaKeypad(it) }, manage = true)
+                PhoneRecentList({ context.openHestiaKeypad(it) }, manage = true, onLearnCalls = onLearnCalls)
             }
             PhoneSection.CONTACTS -> Page("Contactos", "Tu lista de confianza, compartida con Familia.") {
                 SecondaryButton("Volver a Teléfono", { section = PhoneSection.HOME })
                 PhoneContacts({ context.openHestiaKeypad(it) }, manage = true)
             }
-            PhoneSection.PROTECTION -> PhoneProtection(calls, onPreview) { section = PhoneSection.HOME }
+            PhoneSection.PROTECTION -> PhoneProtection(calls, onPreview, onLearnCalls) { section = PhoneSection.HOME }
         }
     }
 }
@@ -56,9 +56,10 @@ internal fun PhoneScreen(calls: CallSetup, onPreview: () -> Unit) {
 private enum class PhoneSection { HOME, RECENT, CONTACTS, PROTECTION }
 
 @Composable
-private fun PhoneProtection(calls: CallSetup, onPreview: () -> Unit, onBack: () -> Unit) {
+private fun PhoneProtection(calls: CallSetup, onPreview: () -> Unit, onLearnCalls: () -> Unit, onBack: () -> Unit) {
     val overview = rememberCallOverview(WeekRange.current())
     var tools by rememberSaveable { mutableStateOf(false) }
+    var reputation by rememberSaveable { mutableStateOf(false) }
     Page("Protección", "Consulta números reportados y revisa las detecciones de Hestia.") {
         SecondaryButton("Volver a Teléfono", onBack)
         DialerSetup()
@@ -66,8 +67,10 @@ private fun PhoneProtection(calls: CallSetup, onPreview: () -> Unit, onBack: () 
             SectionHeader("Identificación de llamadas")
             CallRoleContent(calls)
             if (calls.state.active) CallNoticeContent(calls)
+            SecondaryButton("Aprender sobre llamadas sospechosas", onLearnCalls)
         }
-        DemoCallReportsCard()
+        SecondaryButton(if (reputation) "Ocultar reputación de demostración" else "Reputación de demostración", { reputation = !reputation })
+        if (reputation) DemoCallReportsCard()
         WeeklyCallCards(overview, calls.state.active)
         HestiaCard {
             SecondaryButton(if (tools) "Ocultar herramientas DEBUG" else "Herramientas DEBUG", { tools = !tools })

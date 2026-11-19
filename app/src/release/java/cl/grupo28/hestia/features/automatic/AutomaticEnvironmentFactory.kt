@@ -18,6 +18,6 @@ object AutomaticEnvironmentFactory {
     }
 }
 @Composable
-fun AutomaticEnvironmentPanel(model:AutomaticViewModel,production:@Composable ()->Unit){production()}
+fun AutomaticEnvironmentPanel(model:AutomaticViewModel,onLearnEmail: (() -> Unit)?,production:@Composable ()->Unit){production()}
 
 @Composable fun AutomaticEnvironmentBadge() {}

@@ -78,7 +78,8 @@ android {
         release {
             optimization {
                 enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
+                // Scoped R8 repackaging breaks the Kotlin stdlib class hierarchy used by OkHttp.
+                packageScope = setOf("androidx.**", "kotlinx.**")
             }
         }
     }

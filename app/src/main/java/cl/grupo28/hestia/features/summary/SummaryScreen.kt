@@ -13,10 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
+import cl.grupo28.hestia.BuildConfig
 import cl.grupo28.hestia.core.components.*
 import cl.grupo28.hestia.domain.*
 import cl.grupo28.hestia.features.gmail.GmailUiState
 import cl.grupo28.hestia.features.automatic.AutomaticUiState
+import java.time.Instant
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -29,73 +32,101 @@ fun SummaryScreen(week: WeekRange, summary: WeeklySummary?, gmail: GmailUiState,
     SummaryScreen(week, summary, gmail, automatic, false, onOpenGmail = onOpenGmail)
 
 @Composable
-fun SummaryScreen(
+internal fun SummaryScreen(
     week: WeekRange,
     summary: WeeklySummary?,
     gmail: GmailUiState,
     automatic: AutomaticUiState?,
     callsActive: Boolean,
-    showCalls: Boolean = true,
+    callsAvailable: Boolean = true,
+    demoMode: Boolean = automatic?.demoSelected == true,
+    onOpenPhone: (() -> Unit)? = null,
+    onAskForHelp: (() -> Unit)? = null,
+    onOpenEducation: (() -> Unit)? = null,
+    onOpenAlert: ((String) -> Unit)? = null,
     onOpenGmail: () -> Unit,
 ) {
-    val callOverview = if (showCalls) rememberCallOverview(week) else null
-    val demo=automatic?.demoSelected==true
-    val realSummary=summary?.takeUnless{demo}
-    val remote = automatic?.summary?.takeIf { runCatching { java.time.Instant.parse(it.weekStart).atZone(java.time.ZoneId.systemDefault()).toLocalDate() == week.start }.getOrDefault(false) }
-    val automaticActive = automatic?.status?.let { automatic.eligible && automatic.checked && it.active && runCatching { java.time.Instant.parse(it.expiration).isAfter(java.time.Instant.now()) }.getOrDefault(false) } == true
-    val emailSnapshot = gmail.snapshot?.takeIf { !demo && it.week == week }
+    val callOverview = rememberCallOverview(week)
+    val mail = summarizeMail(week, gmail, automatic, demoMode, fallback = summary)
+    val callSummary = callOverview.summary ?: summary
     val date = DateTimeFormatter.ofPattern("d MMM", Locale.forLanguageTag("es-CL"))
     Page("Tu semana", "${week.start.format(date)} — ${week.end.format(date)}") {
-        HestiaCard(color = MaterialTheme.colorScheme.tertiaryContainer) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                HestiaIcon(HestiaSymbol.CLOCK)
-                Text(
-                    when {
-                        demo -> "DEMO LOCAL · correos simulados"
-                        automaticActive -> "Revisión automática de correos"
-                        gmail.verified -> "Revisión manual de correos"
-                        !showCalls -> "Revisión de correos"
-                        callsActive -> "Identificación de llamadas activada"
-                        else -> "Protección pendiente"
-                    },
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            }
-            Text(if(demo) "Solo datos sintéticos. No representa protección real de Gmail." else if (automaticActive) "Revisión automática disponible." else if (gmail.verified) "Revisión manual disponible." else "Gmail sin verificar.", style = MaterialTheme.typography.bodyMedium)
-        }
-        callOverview?.let { WeeklyCallCards(it, callsActive, realSummary) }
         HestiaCard {
-            MetricHeading("Correos", HestiaSymbol.MAIL)
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Metric(remote?.analyzed ?: emailSnapshot?.records?.size ?: realSummary?.analyzedEmails, "Analizados", Modifier.weight(1f))
-                Metric(remote?.suspicious ?: emailSnapshot?.suspicious ?: realSummary?.suspiciousEmails, "Sospechosos", Modifier.weight(1f))
-            }
-            if (remote != null) Text(if(demo) "Resultados de simulaciones locales; sin correos reales." else if(automaticActive) "Resultados de la revisión automática. No se suman a la revisión manual." else "Resultados guardados de la revisión automática; seguimiento sin confirmar.", style = MaterialTheme.typography.bodyMedium)
-            else if (emailSnapshot != null) Text("Resultado de la última revisión manual de esta semana.", style = MaterialTheme.typography.bodyMedium)
-            if (emailSnapshot?.partial == true) Text("Resultado parcial.", style = MaterialTheme.typography.bodyMedium)
-            SecondaryButton("Revisar correos", onOpenGmail)
+            SectionHeader("Estado de protección")
+            SectionHeader("Llamadas", when {
+                !callsAvailable -> "Identificación no disponible"
+                callsActive -> "Identificación activa"
+                else -> "Identificación desactivada"
+            })
+            SectionHeader(if (demoMode) "Correos · DEMO LOCAL" else "Correos", mail.status)
+            PrimaryButton("Revisar correos", onOpenGmail)
+            if (onOpenPhone != null) SecondaryButton("Consultar Teléfono", onOpenPhone)
         }
         HestiaCard {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                Text(realSummary?.reviewedAlerts?.toString() ?: "Sin datos", style = if (realSummary == null) MaterialTheme.typography.titleLarge else MaterialTheme.typography.displaySmall)
-                Text("Alertas revisadas por ti", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            SectionHeader("Actividad de esta semana")
+            SectionHeader("Llamadas registradas por Hestia")
+            when {
+                callOverview.loading -> Text("Leyendo las llamadas guardadas…")
+                callOverview.unavailable -> Text("No pudimos leer las llamadas guardadas.")
+                callSummary?.registeredCalls == null -> Text("Sin registros de llamadas reales.")
+                else -> {
+                    val suspicious = callSummary.suspiciousCalls
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Metric(callSummary.registeredCalls, "Registradas", Modifier.weight(1f))
+                        Metric(suspicious, "Sospechosas", Modifier.weight(1f))
+                    }
+                    callOverview.lastWarning?.let { Text("Última detección sospechosa: ${date.withZone(ZoneId.systemDefault()).format(it)}.") }
+                }
             }
+            SectionHeader(if (demoMode) "Correos simulados" else "Correos revisados")
+            if (mail.analyzed != null) {
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Metric(mail.analyzed, "Analizados", Modifier.weight(1f))
+                    Metric(mail.suspicious, "Con señales", Modifier.weight(1f))
+                }
+            }
+            Text(mail.activity, style = MaterialTheme.typography.bodyMedium)
+            mail.recentAlert?.let { alert ->
+                if (mail.canOpenAlert && onOpenAlert != null) {
+                    SecondaryButton(if (demoMode) "Revisar último aviso simulado" else "Revisar último aviso de riesgo alto", { onOpenAlert(alert.id) })
+                }
+            }
+            summary?.reviewedAlerts?.let { Text("Alertas revisadas por ti: $it.") }
         }
-        if (callOverview?.summary == null && callOverview?.samples.orEmpty().isEmpty() && realSummary == null && emailSnapshot == null && remote == null) Text("Aún no hay datos para esta semana.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (onAskForHelp != null && onOpenEducation != null) HestiaCard {
+            SectionHeader("Ayuda y prevención")
+            SecondaryButton("Pedir ayuda", onAskForHelp)
+            SecondaryButton("Aprender a prevenir estafas", onOpenEducation)
+        }
     }
 }
 
-internal data class CallOverview(val summary: WeeklySummary?, val samples: List<CallDetection>)
+internal data class CallOverview(
+    val summary: WeeklySummary? = null,
+    val samples: List<CallDetection> = emptyList(),
+    val lastWarning: Instant? = null,
+    val loading: Boolean = false,
+    val unavailable: Boolean = false,
+)
 
 @Composable
 internal fun rememberCallOverview(week: WeekRange): CallOverview {
     val context = LocalContext.current
-    val callEvents = remember(context) { CallEvents(context).events.catch { if (it !is IOException) throw it } }
-    val detections by callEvents.collectAsState(initial = emptyList<CallDetection>())
-    val calls = detections.filter { !it.synthetic && week.contains(it.event.occurredAt) }
-    val samples = detections.filter { it.synthetic && week.contains(it.event.occurredAt) }
-    val callSummary = calls.takeIf { it.isNotEmpty() }?.let { WeeklySummary.fromEvents(it.map(CallDetection::event), week) }
-    return CallOverview(callSummary, samples)
+    val overview by produceState(CallOverview(loading = true), context, week) {
+        CallEvents(context).events
+            .catch { failure ->
+                if (failure !is IOException) throw failure
+                value = value.copy(loading = false, unavailable = true)
+            }
+            .collect { detections ->
+                val calls = detections.filter { !it.synthetic && week.contains(it.event.occurredAt) }
+                val samples = if (BuildConfig.DEBUG) detections.filter { it.synthetic && week.contains(it.event.occurredAt) } else emptyList()
+                val summary = calls.takeIf { it.isNotEmpty() }?.let { WeeklySummary.fromEvents(it.map(CallDetection::event), week) }
+                val lastWarning = calls.filter { it.event.suspicious }.maxOfOrNull { it.event.occurredAt }
+                value = CallOverview(summary, samples, lastWarning)
+            }
+    }
+    return overview
 }
 
 @Composable
@@ -105,7 +136,11 @@ internal fun WeeklyCallCards(overview: CallOverview, callsActive: Boolean, realS
     HestiaCard {
         MetricHeading("Llamadas", HestiaSymbol.PHONE)
         val registered = callSummary?.registeredCalls ?: realSummary?.registeredCalls
-        if (registered == null && samples.isNotEmpty()) {
+        if (overview.loading) {
+            Text("Leyendo las llamadas guardadas…")
+        } else if (overview.unavailable) {
+            Text("No pudimos leer las llamadas guardadas.")
+        } else if (registered == null && samples.isNotEmpty()) {
             Text("Sin registros de llamadas reales esta semana.", style = MaterialTheme.typography.bodyLarge)
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {

@@ -117,8 +117,8 @@ class HestiaInCallService : InCallService() {
             }
             else -> return
         }
-        val entry = RecentCall(tracked.id, number, Instant.now(), kind, demoCallNumber(number) != null)
-        if (kind == RecentKind.RECEIVED && entry.synthetic && tracked.reported) InCallSession.complete(entry)
+        val entry = RecentCall(tracked.id, number, Instant.now(), kind, demoCallNumber(number) != null, warned = tracked.reported)
+        if (kind == RecentKind.RECEIVED && entry.warned) InCallSession.complete(entry)
         val repository = PhoneRecents(applicationContext)
         recentWrites.launch {
             try { repository.record(entry) } catch (_: IOException) { /* Calls remain available if storage fails. */ }
@@ -160,12 +160,12 @@ class HestiaInCallService : InCallService() {
         val canSwitchSpeaker = if (Build.VERSION.SDK_INT >= 34) endpoints.any { it.endpointType == CallEndpoint.TYPE_SPEAKER }
             && endpoints.any { it.endpointType != CallEndpoint.TYPE_SPEAKER }
             else audio?.supportedRouteMask?.and(CallAudioState.ROUTE_SPEAKER) != 0 && audio != null
-        val reportNumber = number?.let(::demoCallNumber)?.takeIf {
+        val shareableNumber = normalized?.takeIf {
             selected.details.handlePresentation == android.telecom.TelecomManager.PRESENTATION_ALLOWED &&
                 !selected.details.hasProperty(Call.Details.PROPERTY_EMERGENCY_CALLBACK_MODE)
         }
         val ui = CallUi(tracked.id, display, state(selected), tracked.reported,
-            verdict?.synthetic == true, muted, speaker, canSwitchSpeaker, reportNumber)
+            verdict?.synthetic == true, muted, speaker, canSwitchSpeaker, shareableNumber?.let(::demoCallNumber), shareableNumber)
         InCallSession.publish(this, ui)
 
         val switched = shownId != ui.id

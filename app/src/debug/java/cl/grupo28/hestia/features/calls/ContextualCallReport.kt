@@ -1,6 +1,8 @@
 package cl.grupo28.hestia.features.calls
 
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -19,6 +21,7 @@ internal fun ContextualCallReport(
     number: String, onClose: () -> Unit, postCall: Boolean = false, contextLabel: String? = null,
     onAnswered: (CallPersona) -> Unit = {},
     onSubmit: (() -> Unit)? = null,
+    afterCallActions: @Composable () -> Unit = {},
 ) {
     val context = LocalContext.current
     val reports = remember(context) { DemoCallReports.from(context) }
@@ -40,8 +43,11 @@ internal fun ContextualCallReport(
         AlertDialog(
             onDismissRequest = ::done,
             title = { Text(if (sent) "Reporte enviado" else "Ya reportado por ti") },
-            text = { Text(if (sent) feedback ?: "Tu reporte se guardó en DEMO LOCAL."
-                else "Puedes corregir o retirar tu reporte en Protección, en Mis reportes.") },
+            text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(if (sent) feedback ?: "Tu reporte se guardó en DEMO LOCAL."
+                    else "Puedes corregir o retirar tu reporte en Protección, en Mis reportes.")
+                afterCallActions()
+            } },
             confirmButton = { TextButton(::done, Modifier.heightIn(min = 48.dp)) { Text("Entendido") } },
         )
     } else ReportDialog(
@@ -72,5 +78,6 @@ internal fun ContextualCallReport(
             }
         }, fixed = true, postCall = postCall, contextLabel = contextLabel, busy = busy, feedback = feedback,
         submitLabel = if (onSubmit != null) "Reportar y colgar" else null,
+        afterCallActions = { if (!busy) afterCallActions() },
     )
 }

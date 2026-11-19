@@ -141,7 +141,7 @@ internal fun DemoCallReportsCard() {
             Text("Para sincronizar con el computador, permite la conexión local de Hestia.")
             SecondaryButton("Permitir conexión local", { permission.launch(CALL_DEMO_PERMISSION) })
         }
-        PrimaryButton("Reportar un número", { form = ReportForm() }, enabled = permitted && !busy)
+        PrimaryButton("Reportar número", { form = ReportForm() }, enabled = permitted && !busy)
         SecondaryButton("Consultar reputación", { consult = true })
         SecondaryButton("Mis reportes", { showOwn = !showOwn }, enabled = !busy)
         if (showOwn) {
@@ -211,6 +211,7 @@ internal fun ReportDialog(
     initial: ReportForm, persona: CallPersona, onClose: () -> Unit, onSave: (String, CallReportCategory) -> Unit,
     fixed: Boolean = false, postCall: Boolean = false, contextLabel: String? = null,
     busy: Boolean = false, feedback: String? = null, submitLabel: String? = null,
+    afterCallActions: @Composable () -> Unit = {},
 ) {
     var input by rememberSaveable { mutableStateOf(initial.number) }
     var category by rememberSaveable { mutableStateOf(initial.category) }
@@ -223,6 +224,7 @@ internal fun ReportDialog(
             if (fixed) Text(initial.number, style = MaterialTheme.typography.titleLarge)
             else DemoNumberField(input, { input = it }, readOnly = editing)
             contextLabel?.let { Text(it) }
+            afterCallActions()
             feedback?.let { Text(it, Modifier.semantics { liveRegion = LiveRegionMode.Polite }, color = MaterialTheme.colorScheme.error) }
             Text("Elige una categoría")
             Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(4.dp)) {

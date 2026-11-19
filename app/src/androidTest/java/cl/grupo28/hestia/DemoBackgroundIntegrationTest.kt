@@ -30,7 +30,7 @@ class DemoBackgroundIntegrationTest {
   try {
    compose.waitUntil(30000){compose.onAllNodesWithText("Bienvenido a Hestia").fetchSemanticsNodes().isNotEmpty()||compose.onAllNodesWithTag("tab_summary").fetchSemanticsNodes().isNotEmpty()}
    if(compose.onAllNodesWithText("Bienvenido a Hestia").fetchSemanticsNodes().isNotEmpty()) listOf("Comenzar","Continuar sin cuenta","Continuar sin Gmail","Continuar sin activar","Continuar sin agenda","Continuar sin avisos","Entrar a Hestia").forEach(::tap)
-   tap("Revisar correos");waitText("Backend: conectado");tap("Activar avisos en segundo plano");waitText("Activos")
+   tap("Revisar correos");waitText("Conectada al computador");tap("Herramientas de demostración");tap("Activar avisos en segundo plano");waitText("Activos")
    val manager=context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
    compose.waitUntil(15000) { manager.activeNotifications.any { it.id==LocalDemoBackgroundService.STATUS_ID } }
    val previous=manager.activeNotifications.mapNotNull{it.tag}.toSet()
@@ -39,7 +39,16 @@ class DemoBackgroundIntegrationTest {
    val power=context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
    compose.waitUntil(10000){!power.isInteractive}
    runBlocking { controls.emit(LocalDemoGateway.owner("bob"),"high-risk",false) }
-   compose.waitUntil(30000){manager.activeNotifications.any{it.tag?.startsWith("demo:bob:")==true && it.tag !in previous}}
+   try {
+    compose.waitUntil(30000){manager.activeNotifications.any{it.tag?.startsWith("demo:bob:")==true && it.tag !in previous}}
+   } catch (timeout: ComposeTimeoutException) {
+    throw AssertionError(
+     "Aviso de prueba pendiente. Monitor: ${DemoMonitor.state.value}. " +
+      "Pantalla interactiva: ${power.isInteractive}. Reposo: ${power.isDeviceIdleMode}. " +
+      "Aviso de servicio activo: ${manager.activeNotifications.any { it.id == LocalDemoBackgroundService.STATUS_ID }}.",
+     timeout,
+    )
+   }
    val notification=manager.activeNotifications.first{it.tag?.startsWith("demo:bob:")==true && it.tag !in previous}
    val tag=notification.tag
    instrumentation.uiAutomation.executeShellCommand("input keyevent KEYCODE_WAKEUP").close()
@@ -54,6 +63,10 @@ class DemoBackgroundIntegrationTest {
    Thread.sleep(9000)
    assertEquals(1,manager.activeNotifications.count{it.tag==tag})
    assertEquals(1,manager.activeNotifications.count{it.tag?.startsWith("demo:bob:")==true && it.tag !in previous})
-  } finally { compose.runOnUiThread { DemoMonitor.stop(context);controls.select(false,"alice") } }
+  } finally {
+   instrumentation.uiAutomation.executeShellCommand("input keyevent KEYCODE_WAKEUP").close()
+   instrumentation.uiAutomation.executeShellCommand("wm dismiss-keyguard").close()
+   compose.runOnUiThread { DemoMonitor.stop(context);controls.select(false,"alice") }
+  }
  }
 }

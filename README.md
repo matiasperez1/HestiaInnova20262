@@ -26,7 +26,9 @@ Se mantienen Resumen, Aprender y Familia. Resumen utiliza datos reales, separa r
 
 Sesión Supabase cifrada con Keystore y excluida de backups, preservada en esta actualización. No se modificaron secrets.properties ni los clientes OAuth existentes. No se desplegaron recursos de pago, no se aplicaron migraciones remotas ni se hicieron commits/push.
 
-Familia guarda contactos de emergencia en el teléfono: entrada manual, iniciales, eliminación confirmada y apertura del marcador mediante ACTION_DIAL. No necesita permisos de agenda ni CALL_PHONE. No hay backend, invitaciones ni avisos a terceros. Aprender contiene cinco lecciones propias con preguntas, progreso local y enlaces de CMF, SERNAC, ChileAtiende y BCN.
+Familia guarda personas de confianza en el teléfono. Permite editar sus datos, ordenar la lista, elegir un contacto principal y preparar una solicitud de ayuda que la persona revisa antes de abrir Mensajes o el selector de Android. El marcador se abre mediante `ACTION_DIAL`. El selector de contactos del sistema concede acceso al número elegido. [Guía de Familia](docs/ETAPA_5_FAMILIA_CONTACTOS_CONFIANZA.md).
+
+Aprender ofrece seis temas, doce lecciones y ejercicios prácticos sin conexión. Guarda el paso y la respuesta de práctica en el teléfono y reconoce las lecciones terminadas en ediciones anteriores. Protección, Recientes y los correos con señales abren las lecciones relacionadas. [Guía de educación y prevención](docs/ETAPA_6_EDUCACION_PREVENCION.md).
 
 WhatsApp es solo temática educativa. No hay funciones de análisis de mensajes ni sección independiente de Protección.
 
@@ -58,6 +60,9 @@ APK: `app/build/outputs/apk/debug/app-debug.apk`. Instalar con `adb install -r` 
 
 ## Documentos y límites
 
+[ETAPA 8 · Auditoría de accesibilidad, seguridad y validación](docs/ETAPA_8_AUDITORIA_ACCESIBILIDAD_SEGURIDAD.md). Incluye las matrices de QA, la inspección del APK RELEASE y los pasos pendientes para TalkBack y Gmail real.
+
+- [ETAPA 7 · Integración del MVP](docs/ETAPA_7_INTEGRACION_CONSOLIDACION_MVP.md) y [guion de demostración para ayudantes](docs/GUIA_DEMO_AYUDANTES.md).
 - [Diseño ETAPA 1.2](docs/DESIGN_DECISIONS.md): paleta, accesibilidad, investigación y límites.
 - AGENTS.md: reglas vigentes.
 - MVP_SPEC.md: alcance y aceptación actuales.

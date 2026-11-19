@@ -4,7 +4,8 @@ import { AppError } from "../types.js";
 import { validId } from "../time.js";
 import { DemoStore } from "./store.js";
 import { DemoCallReports } from "./call-reports.js";
-export function demoHandler(db: DemoStore, callReportThreshold: number) {
+import { demoLanInterface, permitsDemoClient } from "./listen-policy.js";
+export function demoHandler(db: DemoStore, callReportThreshold: number, lan?: ReturnType<typeof demoLanInterface>) {
   const calls = new DemoCallReports(db, callReportThreshold);
   return async (req: IncomingMessage, res: ServerResponse) => {
     const send = (status: number, value: unknown) => {
@@ -17,18 +18,18 @@ export function demoHandler(db: DemoStore, callReportThreshold: number) {
     };
     try {
       if (
-        !["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(
-          req.socket.remoteAddress ?? "",
-        ) ||
-        req.headers.origin ||
+        req.headers.origin !== undefined ||
         req.headers["x-hestia-demo"] !== "true" ||
-        !/^(127\.0\.0\.1|localhost|10\.0\.2\.2)(:\d+)?$/.test(
-          req.headers.host ?? "",
-        )
+        !permitsDemoClient(req.socket.remoteAddress ?? "", req.headers.host ?? "", req.socket.localPort ?? 0, lan)
       )
         throw new AppError("DEMO_LOCAL_CLIENT_REQUIRED", 403);
       const url = new URL(req.url ?? "/", "http://localhost");
       const path = url.pathname;
+      if (path === "/demo/health" && req.method === "GET") {
+        await db.tx((client) => client.query("SELECT 1"));
+        send(200, { mode: "LOCAL_DEMO", database: "ready", transport: lan ? "lan" : "loopback" });
+        return;
+      }
       if (path === "/demo/session" && req.method === "POST") {
         const b = await body(req);
         if (typeof b.persona !== "string")

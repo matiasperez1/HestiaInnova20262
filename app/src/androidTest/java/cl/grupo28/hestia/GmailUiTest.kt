@@ -49,9 +49,9 @@ class GmailUiTest {
         compose.setContent { HestiaTheme {
             cl.grupo28.hestia.features.summary.SummaryScreen(week,null,GmailUiState(snapshot=GmailSnapshot("test-owner",week,Instant.now(),listOf(record),false)),{})
         } }
-        compose.onNodeWithContentDescription("Registradas por Hestia: Sin datos").assertExists()
+        compose.waitUntil(5000) { compose.onAllNodesWithText("Sin registros de llamadas reales.").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithContentDescription("Analizados: 1").assertExists()
-        compose.onNodeWithContentDescription("Sospechosos: 1").assertExists()
+        compose.onNodeWithContentDescription("Con señales: 1").assertExists()
     }
 
     @Test fun reviewingStateIsExplicitAndDoesNotFabricateZero() {

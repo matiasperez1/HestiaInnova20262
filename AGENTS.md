@@ -74,7 +74,7 @@ Resumen: semana actual, llamadas registradas/sospechosas, correos analizados/sos
 
 Contactos de emergencia con nombre, teléfono e iniciales. Agregar/eliminar varios, con selector del sistema o entrada manual. Llamar abre el marcador sin realizar la llamada automáticamente. Sin backend de contactos ni avisos a terceros no autorizados.
 
-Cinco lecciones propias y breves basadas en CMF, SERNAC, ChileAtiende y BCN; identificar la fuente y enlazarla. Ley 20.009: artículo 2, aviso, identificador y bloqueo; artículo 4 bis, prevención e información de seguridad. No atribuir a esa ley una prohibición expresa de llamadas para pedir claves. No presentar material de Hestia como cursos de organismos oficiales ni prometer restituciones automáticas.
+Aprender ofrece seis temas y doce lecciones propias con ejercicios disponibles sin conexión. Identificar y enlazar fuentes de CMF, SERNAC, CSIRT, ChileAtiende y BCN. Ley 20.009: artículo 2, aviso, identificador y bloqueo; artículo 4 bis, prevención e información de seguridad. No atribuir a esa ley una prohibición expresa de llamadas para pedir claves. No presentar material de Hestia como cursos de organismos oficiales ni prometer restituciones automáticas.
 
 No implementar SMS ni análisis o recepción de conversaciones de WhatsApp; WhatsApp es solo temática educativa. Sin lectura del historial telefónico ni control remoto.
 
@@ -148,3 +148,11 @@ En DEBUG, Hestia vuelve a solicitar `ROLE_DIALER` desde Teléfono y ofrece su in
 ## ETAPA 4.3 — Reportes contextuales
 
 En DEBUG, el reporte de DEMO LOCAL puede usar un número ficticio obtenido de Telecom o de Recientes y requiere confirmación explícita. El teléfono completo, la selección de identidad sintética y los reportes se mantienen separados de Gmail. Las categorías ajenas a fraude se muestran aparte y no contribuyen al umbral de dos identidades. La oferta tras colgar aprovecha la pantalla visible de Hestia o la entrada de Recientes, sin iniciar actividades desde segundo plano ni agregar permisos. Ver [reportes contextuales](docs/ETAPA_4_3_REPORTES_CONTEXTUALES.md).
+
+## ETAPA 5 — Familia y contactos de confianza
+
+Familia y Teléfono comparten los contactos locales de DataStore. Familia permite editar, ordenar y elegir un contacto principal. Pedir ayuda prepara un mensaje editable y requiere elegir la persona y la aplicación. Se autoriza abrir el marcador, el editor SMS mediante `ACTION_SENDTO` y Android Sharesheet por acción explícita. El envío y la llamada requieren confirmación en la aplicación de destino. Durante una llamada gestionada por Hestia solo se prepara la solicitud. Incluir el número de una llamada requiere una opción explícita. En alertas de correo se usan plantillas sin metadatos del mensaje. Los contactos siguen vinculados al dispositivo, fuera de las identidades sintéticas y de las cuentas remotas. Ver [guía de Familia](docs/ETAPA_5_FAMILIA_CONTACTOS_CONFIANZA.md).
+
+## ETAPA 6 — Educación y prevención
+
+Contenido y ejercicios deterministas incluidos en DEBUG y RELEASE. El progreso se guarda en el DataStore del dispositivo mediante identificadores estables. La clave histórica de cinco lecciones se conserva y sus finalizaciones se reconocen al leerla. La ruta contextual solo recibe un identificador educativo y devuelve a la pantalla de origen. Los accesos telefónicos aparecen desde Protección y Recientes, fuera de la llamada. El tema de actuación reutiliza Pedir ayuda. Mantener la exclusión de copias en la nube del DataStore. Ver [guía de educación](docs/ETAPA_6_EDUCACION_PREVENCION.md).

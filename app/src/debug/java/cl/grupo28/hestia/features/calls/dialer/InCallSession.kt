@@ -19,6 +19,7 @@ internal data class CallUi(
     val speaker: Boolean,
     val canSwitchSpeaker: Boolean,
     val reportNumber: String?,
+    val shareableNumber: String?,
 )
 
 internal enum class CallCommand { Answer, Reject, HangUp, Mute, Speaker }

@@ -16,6 +16,9 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
@@ -58,6 +61,11 @@ internal fun PhoneKeypad(onKey: (Char) -> Unit, showLetters: Boolean = false, on
                 Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(gap)) {
                     row.forEach { digit ->
                         val plus = onPlus.takeIf { digit == '0' }
+                        val label = when (digit) {
+                            '*' -> "Asterisco"
+                            '#' -> "Numeral"
+                            else -> digit.toString()
+                        }
                         Surface(
                             modifier = Modifier.width(diameter).heightIn(min = diameter).fillMaxHeight().clip(CircleShape)
                                 .combinedClickable(
@@ -65,7 +73,7 @@ internal fun PhoneKeypad(onKey: (Char) -> Unit, showLetters: Boolean = false, on
                                     onClick = { onKey(digit) },
                                     onLongClickLabel = "Introducir +".takeIf { plus != null },
                                     onLongClick = plus,
-                                ),
+                                ).semantics { contentDescription = label },
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.surfaceContainerHigh,
                             border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
@@ -75,10 +83,11 @@ internal fun PhoneKeypad(onKey: (Char) -> Unit, showLetters: Boolean = false, on
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center,
                             ) {
-                                Text(digit.toString(), style = MaterialTheme.typography.displaySmall)
+                                Text(digit.toString(), Modifier.clearAndSetSemantics {},
+                                    style = MaterialTheme.typography.displaySmall)
                                 val caption = if (plus != null) "+" else if (digit.isDigit()) letters[digit.digitToInt()] else ""
                                 if (showLetters && caption.isNotEmpty()) {
-                                    Text(caption, style = MaterialTheme.typography.labelMedium,
+                                    Text(caption, Modifier.clearAndSetSemantics {}, style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                                 }
                             }

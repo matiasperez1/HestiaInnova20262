@@ -20,7 +20,10 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -71,7 +74,7 @@ class HestiaDialerActivity : ComponentActivity() {
                                 Spacer(Modifier.width(8.dp))
                                 Text("Volver")
                             }
-                            Text("Marcador", style = type.titleLarge)
+                            Text("Marcador", Modifier.semantics { heading() }, style = type.titleLarge)
                         }
                     },
                 ) { padding ->
@@ -109,7 +112,8 @@ class HestiaDialerActivity : ComponentActivity() {
                                 enabled = number.isNotEmpty(),
                             ) { PhoneIcon(PhoneGlyph.Delete, modifier = Modifier.size(30.dp)) }
                         }
-                        error?.let { Text(it, color = colors.error, style = type.bodyMedium, textAlign = TextAlign.Center) }
+                        error?.let { Text(it, Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                            color = colors.error, style = type.bodyMedium, textAlign = TextAlign.Center) }
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             SecondaryButton("Recientes", { selection = DialerSelection.RECENT }, Modifier.weight(1f))
                             SecondaryButton("Contactos", { selection = DialerSelection.CONTACTS }, Modifier.weight(1f))

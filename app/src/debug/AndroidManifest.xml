@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
@@ -9,6 +10,9 @@
         <intent><action android:name="android.intent.action.DIAL" /></intent>
     </queries>
     <application android:networkSecurityConfig="@xml/demo_network_security">
+        <activity android:name="androidx.compose.ui.tooling.PreviewActivity" android:permission="android.permission.DUMP" />
+        <activity android:name="androidx.activity.ComponentActivity" android:exported="false"
+            tools:replace="android:exported" />
         <activity android:name=".services.CallerIdentificationActivity" android:exported="false"
             android:excludeFromRecents="true" android:noHistory="true"
             android:taskAffinity="${applicationId}.callerid" android:theme="@style/HestiaCallerIdentification" />

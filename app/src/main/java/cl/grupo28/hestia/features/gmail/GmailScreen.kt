@@ -13,7 +13,10 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import cl.grupo28.hestia.core.components.*
+import cl.grupo28.hestia.domain.HelpRequest
+import cl.grupo28.hestia.domain.HelpTopic
 import cl.grupo28.hestia.domain.gmail.*
+import cl.grupo28.hestia.features.family.TrustHelpDialog
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -47,15 +50,17 @@ fun GmailPanel(state: GmailUiState, onConnect: () -> Unit, onSync: () -> Unit, o
 }
 
 @Composable
-fun GmailScreen(state: GmailUiState, onConnect: () -> Unit, onSync: () -> Unit, onDisconnect: () -> Unit, automaticAvailable: Boolean = false, manualAvailable: Boolean = true, automatic: @Composable () -> Unit = {}) {
-    var manual by rememberSaveable { mutableStateOf(!automaticAvailable) }
-    LaunchedEffect(manualAvailable) { if(!manualAvailable)manual=false }
+fun GmailScreen(state: GmailUiState, onConnect: () -> Unit, onSync: () -> Unit, onDisconnect: () -> Unit, automaticAvailable: Boolean = false, manualAvailable: Boolean = true, onLearnEmail: (() -> Unit)? = null,
+    preferManual: Boolean = !automaticAvailable, showAutomaticAlert: Boolean = false, automatic: @Composable () -> Unit = {}) {
+    var manual by rememberSaveable { mutableStateOf(preferManual && manualAvailable) }
+    var helpFor by remember(state.snapshot) { mutableStateOf<String?>(null) }
+    LaunchedEffect(manualAvailable, showAutomaticAlert) { if (!manualAvailable || showAutomaticAlert) manual = false }
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 22.dp), contentPadding = PaddingValues(top = 12.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(22.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(22.dp)) {
                 Text("Revisar correos", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
                 if (!manual) automatic()
-                if (automaticAvailable && manualAvailable) SecondaryButton(if(manual) "Volver a revisión automática" else "Usar revisión manual", {manual=!manual})
+                if (automaticAvailable && manualAvailable) SecondaryButton(if(manual) "Opciones de revisión automática" else "Usar revisión manual", {manual=!manual})
                 if (manual) {
                     Text("Revisión manual en este teléfono", style = MaterialTheme.typography.titleLarge)
                     GmailPanel(state, onConnect, onSync, onDisconnect)
@@ -79,7 +84,12 @@ fun GmailScreen(state: GmailUiState, onConnect: () -> Unit, onSync: () -> Unit, 
                 if (record.limitedContent) Text("El análisis del contenido fue limitado. No revisamos adjuntos.", style = MaterialTheme.typography.bodyMedium)
                 Text(if (record.analysis.level == EmailRisk.LOW) "Verifica por un canal oficial antes de entregar datos o pagar."
                     else "No sigas sus enlaces ni entregues datos. Verifica por un canal oficial que ya conozcas.", style = MaterialTheme.typography.bodyLarge)
+                if (record.analysis.level == EmailRisk.HIGH) SecondaryButton("Pedir ayuda con este correo", { helpFor = record.fingerprint })
+                if (record.analysis.level != EmailRisk.LOW && onLearnEmail != null) {
+                    SecondaryButton("Aprender a reconocer correos falsos", onLearnEmail)
+                }
             }
         }
     }
+    if (manual && manualAvailable && helpFor != null) TrustHelpDialog(HelpRequest(HelpTopic.EMAIL_WARNING), { helpFor = null })
 }

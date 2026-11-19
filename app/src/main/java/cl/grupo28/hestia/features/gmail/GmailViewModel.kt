@@ -10,12 +10,14 @@ import com.google.android.gms.auth.api.identity.ClearTokenRequest
 import com.google.android.gms.auth.api.identity.Identity
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import java.io.IOException
 import java.util.UUID
 
 enum class GmailOperation { AUTHORIZING, REVIEWING, DISCONNECTING }
 
 data class GmailUiState(val eligible: Boolean = false, val verified: Boolean = false, val busy: Boolean = false,
-    val snapshot: GmailSnapshot? = null, val message: String? = null, val authorizationReceived: Boolean = false, val operation: GmailOperation? = null)
+    val snapshot: GmailSnapshot? = null, val message: String? = null, val authorizationReceived: Boolean = false, val operation: GmailOperation? = null,
+    val connectionLost: Boolean = false)
 
 class GmailViewModel(private val repository: GmailRepository, auth: StateFlow<AuthState>, private val invalidate: (String) -> Unit = {}) : ViewModel() {
     private val mutableState = MutableStateFlow(GmailUiState())
@@ -49,7 +51,7 @@ class GmailViewModel(private val repository: GmailRepository, auth: StateFlow<Au
         val address = email ?: return
         val id = UUID.randomUUID().toString()
         pending = id to sync
-        mutableState.update { it.copy(busy = true, message = null, operation = GmailOperation.AUTHORIZING) }
+        mutableState.update { it.copy(busy = true, message = null, operation = GmailOperation.AUTHORIZING, connectionLost = false) }
         try { authorize(address, id) } catch (_: Exception) { failed(id, "No pudimos abrir la autorización de Gmail.") }
     }
     fun failed(id: String, message: String) {
@@ -81,6 +83,8 @@ class GmailViewModel(private val repository: GmailRepository, auth: StateFlow<Au
                 }) }
             } catch (_: IllegalArgumentException) {
                 if (owner == expectedOwner) mutableState.update { it.copy(verified = false, message = "La cuenta de Gmail no coincide con tu cuenta de Hestia.") }
+            } catch (_: IOException) {
+                if (owner == expectedOwner) mutableState.update { it.copy(connectionLost = true, message = "No pudimos conectarnos a Gmail. Puedes volver a intentar la revisión.") }
             } catch (_: Exception) {
                 if (owner == expectedOwner) mutableState.update { it.copy(message = "No pudimos terminar la revisión. Se conserva el resultado anterior. Inténtalo nuevamente.") }
             } finally { if (owner == expectedOwner) mutableState.update { it.copy(busy = false, operation = null) } }

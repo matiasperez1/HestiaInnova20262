@@ -5,7 +5,8 @@ import cl.grupo28.hestia.features.calls.CallSetup
 
 internal val callWarningPreviewRoute: String? = null
 internal val phoneRoute: String? = null
+internal val phoneRecentsRoute: String? = null
 
-internal fun NavGraphBuilder.addPhoneDestination(calls: CallSetup, onPreview: () -> Unit) = Unit
+internal fun NavGraphBuilder.addPhoneDestination(calls: CallSetup, onPreview: () -> Unit, onLearnCalls: () -> Unit) = Unit
 
 internal fun NavGraphBuilder.addCallWarningPreview(onClose: () -> Unit) = Unit

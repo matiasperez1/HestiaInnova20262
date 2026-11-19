@@ -23,6 +23,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -84,8 +85,11 @@ internal fun HestiaIncomingCall(
     testLabel: String?,
     onReject: () -> Unit,
     onAnswer: () -> Unit,
+    onHelp: (() -> Unit)? = null,
+    showPrivateDetails: Boolean = true,
 ) {
     var showDetails by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(showPrivateDetails) { if (!showPrivateDetails) showDetails = false }
     val colors = MaterialTheme.colorScheme
     val type = MaterialTheme.typography
     BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -108,11 +112,14 @@ internal fun HestiaIncomingCall(
                     style = type.titleLarge,
                     textAlign = TextAlign.Center,
                 )
-                Text(number, style = type.displaySmall, textAlign = TextAlign.Center)
+                Text(if (showPrivateDetails) number else "Número oculto", style = type.displaySmall, textAlign = TextAlign.Center)
                 testLabel?.let { Text(it, style = type.bodyMedium, color = colors.onSurfaceVariant, textAlign = TextAlign.Center) }
             }
 
-            if (reported) CallRiskCard({ showDetails = true }, Modifier.padding(bottom = 20.dp), inclusive = true)
+            if (reported) CallRiskCard(
+                if (showPrivateDetails) { { showDetails = true } } else null,
+                Modifier.padding(bottom = 20.dp), inclusive = true,
+            )
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 CallAction("Rechazar", colors.error, colors.onError, Modifier.weight(1f), rotation = 135f, diameter = 88.dp) {
@@ -125,11 +132,12 @@ internal fun HestiaIncomingCall(
         }
     }
 
-    if (reported && showDetails) CallRiskDetails(number, testLabel != null, { showDetails = false })
+    if (reported && showDetails && showPrivateDetails) CallRiskDetails(number, testLabel != null, { showDetails = false },
+        onHelp?.let { action -> { showDetails = false; action() } })
 }
 
 @Composable
-internal fun CallRiskCard(onDetails: () -> Unit, modifier: Modifier = Modifier, inclusive: Boolean = false, onReport: (() -> Unit)? = null) {
+internal fun CallRiskCard(onDetails: (() -> Unit)?, modifier: Modifier = Modifier, inclusive: Boolean = false, onReport: (() -> Unit)? = null) {
     val colors = MaterialTheme.colorScheme
     val type = MaterialTheme.typography
     Surface(
@@ -163,7 +171,7 @@ internal fun CallRiskCard(onDetails: () -> Unit, modifier: Modifier = Modifier, 
                 color = colors.onSurface,
                 textAlign = TextAlign.Center,
             )
-            TextButton(
+            if (onDetails != null) TextButton(
                 onClick = onDetails,
                 modifier = Modifier.heightIn(min = 48.dp),
                 contentPadding = PaddingValues(horizontal = 0.dp, vertical = 8.dp),
@@ -176,18 +184,20 @@ internal fun CallRiskCard(onDetails: () -> Unit, modifier: Modifier = Modifier, 
 }
 
 @Composable
-internal fun CallRiskDetails(number: String, synthetic: Boolean, onClose: () -> Unit) {
+internal fun CallRiskDetails(number: String, synthetic: Boolean, onClose: () -> Unit, onHelp: (() -> Unit)? = null) {
     AlertDialog(
         onDismissRequest = onClose,
         title = { Text("Por qué Hestia la marcó", style = MaterialTheme.typography.titleLarge) },
         text = {
-            Text(
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
                 (if (synthetic) "El $number figura como sospechoso en la lista de prueba.\n\n"
                 else "Este número tiene reportes de posibles estafas.\n\n") +
                     "No compartas claves ni códigos. Si dice ser de tu banco, verifica por sus canales oficiales.",
-                modifier = Modifier.verticalScroll(rememberScrollState()),
                 style = MaterialTheme.typography.bodyLarge,
-            )
+                )
+                if (onHelp != null) SecondaryButton("Pedir ayuda", onHelp)
+            }
         },
         confirmButton = { PrimaryButton("Entendido", onClose) },
     )

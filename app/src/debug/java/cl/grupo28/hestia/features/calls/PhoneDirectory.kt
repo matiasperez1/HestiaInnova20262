@@ -14,6 +14,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -31,7 +32,10 @@ import cl.grupo28.hestia.data.calls.RecentCall
 import cl.grupo28.hestia.data.calls.RecentKind
 import cl.grupo28.hestia.data.calls.demoCallNumber
 import cl.grupo28.hestia.features.calls.dialer.HestiaDialerActivity
-import cl.grupo28.hestia.features.family.AddContactDialog
+import cl.grupo28.hestia.features.family.ContactEditor
+import cl.grupo28.hestia.features.family.TrustHelpDialog
+import cl.grupo28.hestia.domain.HelpRequest
+import cl.grupo28.hestia.domain.HelpTopic
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -72,19 +76,20 @@ internal fun PhoneContacts(onSelect: ((String) -> Unit)?, manage: Boolean = fals
                 if (matches.isEmpty()) Text("No encontramos contactos con esa búsqueda.")
                 matches.forEach { contact ->
                     HestiaCard {
-                        SectionHeader(contact.name, contact.phone)
+                        SectionHeader(contact.name, contact.relationship)
+                        Text(contact.phone)
                         if (onSelect != null) SecondaryButton("Marcar a ${contact.name}", { onSelect(contact.phone) })
                     }
                 }
             }
         }
     }
-    if (adding) AddContactDialog(saving, { adding = false }, { name, phone ->
+    if (adding) ContactEditor(saving, { adding = false }, { name, phone, relationship ->
         saving = true
         saveError = null
         scope.launch {
             try {
-                repository.addContact(name, phone)
+                repository.addContact(name, phone, relationship)
                 adding = false
             } catch (error: IllegalArgumentException) {
                 saveError = error.message ?: "Revisa el nombre y el número."
@@ -98,7 +103,7 @@ internal fun PhoneContacts(onSelect: ((String) -> Unit)?, manage: Boolean = fals
 }
 
 @Composable
-internal fun PhoneRecentList(onSelect: (String) -> Unit, manage: Boolean = false) {
+internal fun PhoneRecentList(onSelect: (String) -> Unit, manage: Boolean = false, onLearnCalls: (() -> Unit)? = null) {
     val context = LocalContext.current
     val repository = remember(context) { PhoneRecents(context) }
     var error by remember { mutableStateOf(false) }
@@ -115,7 +120,7 @@ internal fun PhoneRecentList(onSelect: (String) -> Unit, manage: Boolean = false
     }
     val settings = remember(context) { DataStoreSettingsRepository(context).settings.catch { if (it !is IOException) throw it } }
     val contacts by settings.collectAsState(initial = null)
-    var options by remember { mutableStateOf<RecentCall?>(null) }
+    var selectedCallId by rememberSaveable { mutableStateOf<String?>(null) }
     val state by remember(repository) { repository.state.catch { if (it is IOException) error = true else throw it } }
         .collectAsState(initial = null)
     fun change(enabled: Boolean) {
@@ -151,7 +156,7 @@ internal fun PhoneRecentList(onSelect: (String) -> Unit, manage: Boolean = false
                                     Text("¿Quieres reportar esta llamada?")
                                 }
                             }
-                            SecondaryButton("Ver opciones", { options = call })
+                            SecondaryButton("Ver opciones", { selectedCallId = call.id })
                         } else SecondaryButton("Marcar ${call.number}", { onSelect(call.number) })
                     }
                 }
@@ -165,9 +170,10 @@ internal fun PhoneRecentList(onSelect: (String) -> Unit, manage: Boolean = false
         confirmButton = { TextButton({ confirmDisable = false; change(false) }) { Text("Desactivar y borrar") } },
         dismissButton = { TextButton({ confirmDisable = false }) { Text("Cancelar") } },
     )
-    options?.let { call ->
+    state?.calls?.firstOrNull { it.id == selectedCallId }?.let { call ->
         val name = contacts?.contacts?.firstOrNull { demoCallNumber(it.phone)?.let { number -> number == demoCallNumber(call.number) } == true }?.name
-        RecentCallOptions(call, name, onSelect = { options = null; onSelect(call.number) }, onClose = { options = null }) { author ->
+        RecentCallOptions(call, name, onSelect = { selectedCallId = null; onSelect(call.number) }, onClose = { selectedCallId = null },
+            onLearnCalls = onLearnCalls?.takeIf { call.warned }) { author ->
             repository.markAnswered(call.id, author)
         }
     }
@@ -176,9 +182,14 @@ internal fun PhoneRecentList(onSelect: (String) -> Unit, manage: Boolean = false
 internal fun recentDate(at: Instant): String =
     DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withZone(ZoneId.systemDefault()).format(at)
 
+internal fun RecentCall.helpRequest() = HelpRequest(
+    if (warned) HelpTopic.CALL_WARNING else HelpTopic.CALL, synthetic, number, at,
+)
+
 @Composable
 private fun RecentCallOptions(
     call: RecentCall, contact: String?, onSelect: () -> Unit, onClose: () -> Unit,
+    onLearnCalls: (() -> Unit)?,
     onAnswered: (CallPersona) -> Unit,
 ) {
     val context = LocalContext.current
@@ -188,6 +199,7 @@ private fun RecentCallOptions(
     val number = demoCallNumber(call.number)
     var snapshot by remember { mutableStateOf<DemoReputationSnapshot?>(null) }
     var report by remember { mutableStateOf(false) }
+    var help by remember { mutableStateOf(false) }
     var consult by remember { mutableStateOf(false) }
     var syncFailed by remember { mutableStateOf(false) }
     LaunchedEffect(consult, report, persona) {
@@ -199,7 +211,9 @@ private fun RecentCallOptions(
             catch (_: Exception) { syncFailed = true }
         }
     }
-    if (report && number != null) {
+    if (help) {
+        TrustHelpDialog(call.helpRequest(), { help = false })
+    } else if (report && number != null) {
         ContextualCallReport(number, { report = false }, contextLabel = listOfNotNull(contact, recentDate(call.at)).joinToString(" · "),
             onAnswered = onAnswered)
     } else AlertDialog(
@@ -217,6 +231,8 @@ private fun RecentCallOptions(
                 }
             } else Text("Los reportes de DEMO LOCAL están disponibles para números ficticios.")
             SecondaryButton("Volver a llamar", onSelect)
+            SecondaryButton("Pedir ayuda", { help = true })
+            if (onLearnCalls != null) SecondaryButton("Aprender sobre llamadas sospechosas", onLearnCalls)
             if (number != null) {
                 SecondaryButton("Reportar número", { report = true })
                 SecondaryButton("Consultar reputación", { consult = true }, enabled = !consult)

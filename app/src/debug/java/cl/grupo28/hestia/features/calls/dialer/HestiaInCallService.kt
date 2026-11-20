@@ -15,14 +15,18 @@ import android.telecom.InCallService
 import android.telecom.VideoProfile
 import android.telephony.PhoneNumberUtils
 import cl.grupo28.hestia.data.localCallReputation
+import cl.grupo28.hestia.data.PersonalReports
 import cl.grupo28.hestia.data.calls.PhoneRecents
 import cl.grupo28.hestia.data.calls.RecentCall
 import cl.grupo28.hestia.data.calls.RecentKind
 import cl.grupo28.hestia.data.calls.demoCallNumber
 import cl.grupo28.hestia.domain.normalizeCallNumber
+import cl.grupo28.hestia.domain.PersonalReportReason
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.time.Instant
@@ -34,12 +38,16 @@ class HestiaInCallService : InCallService() {
         val id: String,
         val callback: Call.Callback,
         var connected: Boolean,
+        var rejected: Boolean = false,
         var reported: Boolean = false,
         var recorded: Boolean = false,
     )
     private val managed = linkedMapOf<Call, TrackedCall>()
     private var shownId: String? = null
     private var shownState: Int? = null
+    private var shownPersonal: PersonalReportReason? = null
+    private val personalReports by lazy { PersonalReports.from(this) }
+    private val observations = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var audio: CallAudioState? = null
     private var endpoint: CallEndpoint? = null
     private var endpoints = emptyList<CallEndpoint>()
@@ -49,6 +57,11 @@ class HestiaInCallService : InCallService() {
     private val stopTone = Runnable {
         toneCall?.stopDtmfTone()
         toneCall = null
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        observations.launch { personalReports.state.drop(1).collect { update() } }
     }
 
     override fun onCallAdded(call: Call) {
@@ -63,6 +76,7 @@ class HestiaInCallService : InCallService() {
         managed[call] = TrackedCall(UUID.randomUUID().toString(), callback, state(call) == Call.STATE_ACTIVE)
         call.registerCallback(callback)
         update()
+        observations.launch { personalReports.load() }
     }
 
     override fun onCallRemoved(call: Call) {
@@ -107,17 +121,19 @@ class HestiaInCallService : InCallService() {
         tracked.recorded = true
         if (!holdsDialerRole() || details.hasProperty(Call.Details.PROPERTY_EMERGENCY_CALLBACK_MODE) ||
             details.handlePresentation != android.telecom.TelecomManager.PRESENTATION_ALLOWED) return
-        val number = details.handle?.takeIf { it.scheme == "tel" }?.schemeSpecificPart?.let(::normalizeCallNumber) ?: return
+        val original = details.handle?.takeIf { it.scheme == "tel" }?.schemeSpecificPart ?: return
+        val number = normalizeCallNumber(original) ?: return
         val kind = when (details.callDirection) {
             Call.Details.DIRECTION_OUTGOING -> RecentKind.OUTGOING
             Call.Details.DIRECTION_INCOMING -> when {
                 tracked.connected || details.connectTimeMillis > 0 -> RecentKind.RECEIVED
-                details.disconnectCause.code == DisconnectCause.REJECTED -> RecentKind.DECLINED
+                tracked.rejected || details.disconnectCause.code == DisconnectCause.REJECTED -> RecentKind.DECLINED
                 else -> RecentKind.MISSED
             }
             else -> return
         }
-        val entry = RecentCall(tracked.id, number, Instant.now(), kind, demoCallNumber(number) != null, warned = tracked.reported)
+        val entry = RecentCall(tracked.id, number, Instant.now(), kind, demoCallNumber(number) != null,
+            warned = tracked.reported, originalNumber = original)
         if (kind == RecentKind.RECEIVED && entry.warned) InCallSession.complete(entry)
         val repository = PhoneRecents(applicationContext)
         recentWrites.launch {
@@ -126,7 +142,13 @@ class HestiaInCallService : InCallService() {
     }
 
     private fun update() {
-        managed.forEach { (call, tracked) -> if (state(call) == Call.STATE_DISCONNECTED) recordRecent(call.details, tracked) }
+        managed.forEach { (call, tracked) ->
+            // Incoming calls without a final cause can still be classified in onCallRemoved.
+            if (state(call) == Call.STATE_DISCONNECTED && (tracked.connected || tracked.rejected ||
+                    call.details.disconnectCause.code != DisconnectCause.UNKNOWN)) {
+                recordRecent(call.details, tracked)
+            }
+        }
         val live = managed.keys.filter { state(it) != Call.STATE_DISCONNECTED }
         val selected = if (!holdsDialerRole()) null else
             live.firstOrNull { state(it) == Call.STATE_RINGING }
@@ -137,14 +159,23 @@ class HestiaInCallService : InCallService() {
             InCallSession.clear(this)
             shownId = null
             shownState = null
+            shownPersonal = null
             getSystemService(NotificationManager::class.java).cancel(CallNotices.ID)
             return
         }
 
-        val handle = selected.details.handle?.takeIf { it.scheme == "tel" }
+        val details = selected.details
+        val visibleHandle = details.handle?.takeIf {
+            details.handlePresentation == android.telecom.TelecomManager.PRESENTATION_ALLOWED
+        }
+        val handle = visibleHandle?.takeIf { it.scheme == "tel" }
         val number = handle?.schemeSpecificPart
         val normalized = number?.let(::normalizeCallNumber)
         val verdict = normalized?.let { localCallReputation(this).lookup(it) }
+        val personalReason = number?.takeIf {
+            details.callDirection == Call.Details.DIRECTION_INCOMING && verdict?.synthetic != true &&
+                !details.hasProperty(Call.Details.PROPERTY_EMERGENCY_CALLBACK_MODE)
+        }?.let { personalReports.state.value.active(personalReports.normalize(it))?.reason }
         val tracked = managed.getValue(selected)
         if (verdict?.reported == true) tracked.reported = true
         val display = if (verdict?.synthetic == true) {
@@ -152,7 +183,7 @@ class HestiaInCallService : InCallService() {
             "${digits.take(3)} ${digits.substring(3, 6)} ${digits.takeLast(4)}"
         } else {
             normalized?.let { PhoneNumberUtils.formatNumber(it, java.util.Locale.getDefault().country.ifEmpty { "CL" }) ?: it }
-                ?: selected.details.handle?.takeIf { it.scheme == "sip" }?.schemeSpecificPart
+                ?: visibleHandle?.takeIf { it.scheme == "sip" }?.schemeSpecificPart
                 ?: "Número no disponible"
         }
         val speaker = if (Build.VERSION.SDK_INT >= 34) endpoint?.endpointType == CallEndpoint.TYPE_SPEAKER
@@ -165,14 +196,17 @@ class HestiaInCallService : InCallService() {
                 !selected.details.hasProperty(Call.Details.PROPERTY_EMERGENCY_CALLBACK_MODE)
         }
         val ui = CallUi(tracked.id, display, state(selected), tracked.reported,
-            verdict?.synthetic == true, muted, speaker, canSwitchSpeaker, shareableNumber?.let(::demoCallNumber), shareableNumber)
+            verdict?.synthetic == true, muted, speaker, canSwitchSpeaker, shareableNumber?.let(::demoCallNumber),
+            shareableNumber, details.connectTimeMillis.takeIf { it > 0 }, personalReason)
         InCallSession.publish(this, ui)
 
         val switched = shownId != ui.id
-        if (switched || shownState != ui.state) {
+        val stateChanged = shownState != ui.state
+        if (switched || stateChanged || shownPersonal != ui.personalReason) {
             shownId = ui.id
             shownState = ui.state
-            CallNotices.show(this, ui)
+            shownPersonal = ui.personalReason
+            CallNotices.show(this, ui, replace = switched || stateChanged)
             if (switched) openCallUi()
         }
     }
@@ -190,7 +224,10 @@ class HestiaInCallService : InCallService() {
         val state = state(call)
         when (command) {
             CallCommand.Answer -> if (state == Call.STATE_RINGING) call.answer(VideoProfile.STATE_AUDIO_ONLY)
-            CallCommand.Reject -> if (state == Call.STATE_RINGING) call.reject(false, null)
+            CallCommand.Reject -> if (state == Call.STATE_RINGING) {
+                managed.getValue(call).rejected = true
+                call.reject(false, null)
+            }
             CallCommand.HangUp -> if (state != Call.STATE_RINGING && state != Call.STATE_DISCONNECTED) call.disconnect()
             CallCommand.Mute -> if (state == Call.STATE_ACTIVE) setMuted(!muted)
             CallCommand.Speaker -> if (state == Call.STATE_ACTIVE) switchSpeaker()
@@ -233,6 +270,7 @@ class HestiaInCallService : InCallService() {
     }
 
     override fun onDestroy() {
+        observations.cancel()
         finishTone()
         managed.forEach { (call, tracked) -> call.unregisterCallback(tracked.callback) }
         managed.clear()

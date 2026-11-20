@@ -10,13 +10,14 @@ import android.content.Intent
 import android.os.Build
 import android.telecom.Call
 import cl.grupo28.hestia.R
+import cl.grupo28.hestia.features.calls.PERSONAL_MARK_TITLE
 
 internal object CallNotices {
     const val ID = 3201
     private const val INCOMING = "hestia_telecom_incoming"
     private const val ONGOING = "hestia_telecom_ongoing"
 
-    fun show(context: Context, ui: CallUi) {
+    fun show(context: Context, ui: CallUi, replace: Boolean) {
         val manager = context.getSystemService(NotificationManager::class.java)
         val ringing = ui.state == Call.STATE_RINGING
         manager.createNotificationChannel(NotificationChannel(INCOMING, "Llamadas entrantes de Hestia", NotificationManager.IMPORTANCE_HIGH).apply {
@@ -28,6 +29,7 @@ internal object CallNotices {
         val screen = PendingIntent.getActivity(context, 0, TelecomCallActivity.intent(context), PendingIntent.FLAG_IMMUTABLE)
         val label = when {
             !ringing -> "Llamada en curso"
+            ui.personalReason != null -> PERSONAL_MARK_TITLE
             ui.reported -> "Posible llamada fraudulenta"
             else -> "Llamada entrante"
         }
@@ -48,7 +50,7 @@ internal object CallNotices {
             notice.addAction(Notification.Action.Builder(null, "Colgar", action(context, ui, CallCommand.HangUp)).build())
         }
         // A notification ID cannot change channels across updates reliably.
-        manager.cancel(ID)
+        if (replace) manager.cancel(ID)
         try {
             manager.notify(ID, notice.build())
         } catch (_: SecurityException) {

@@ -33,13 +33,12 @@ import cl.grupo28.hestia.core.theme.HestiaTheme
 import cl.grupo28.hestia.data.DataStoreSettingsRepository
 import cl.grupo28.hestia.features.calls.CallRiskCard
 import cl.grupo28.hestia.features.calls.CallRiskDetails
-import cl.grupo28.hestia.domain.HelpRequest
-import cl.grupo28.hestia.domain.HelpTopic
-import cl.grupo28.hestia.features.family.TrustHelpDialog
+import cl.grupo28.hestia.features.calls.PersonalCallWarning
+import cl.grupo28.hestia.domain.CallSignals
 import java.util.Locale
 import java.util.UUID
 
-private class CallerAlert(val number: String, val synthetic: Boolean) {
+private class CallerAlert(val number: String, val signals: CallSignals) {
     var visible = false
     var dismissed = false
     var close: (() -> Unit)? = null
@@ -59,14 +58,14 @@ internal fun clearCallerIdentification() {
     alerts.clear()
 }
 
-internal fun Context.showCallerIdentification(number: String, synthetic: Boolean, fallback: () -> Unit) {
+internal fun Context.showCallerIdentification(number: String, signals: CallSignals, fallback: () -> Unit) {
     // Preserve the system's incoming-call presentation and privacy on the lock screen.
     if (getSystemService(KeyguardManager::class.java).isKeyguardLocked) {
         main.post { fallback() }
         return
     }
     val key = UUID.randomUUID().toString()
-    val alert = CallerAlert(number, synthetic)
+    val alert = CallerAlert(number, signals)
     alerts[key] = alert
     try {
         startActivity(Intent(this, CallerIdentificationActivity::class.java)
@@ -108,25 +107,19 @@ class CallerIdentificationActivity : ComponentActivity() {
         setContent {
             val preferences by settings.collectAsState(initial = null)
             var details by remember { mutableStateOf(false) }
-            var help by remember { mutableStateOf(false) }
             BackHandler { item.dismissed = true; finish() }
             HestiaTheme(preferences?.display ?: DisplayPreferences()) {
                 Surface(shape = MaterialTheme.shapes.extraLarge, tonalElevation = 4.dp) {
                     Column(Modifier.heightIn(max = 380.dp).verticalScroll(rememberScrollState()).padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(if (item.synthetic) "Hestia · Número de prueba" else "Identificación de Hestia")
+                        Text(if (item.signals.community.synthetic) "Hestia · Número de prueba" else "Identificación de Hestia")
                         Text(number, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
-                        CallRiskCard({ details = true })
+                        item.signals.personal?.let { PersonalCallWarning(it) }
+                        if (item.signals.community.reported) CallRiskCard({ details = true })
                         SecondaryButton("Cerrar aviso", { item.dismissed = true; finish() })
                     }
                 }
-                if (help) {
-                    TrustHelpDialog(HelpRequest(HelpTopic.CALL_WARNING, demonstration = item.synthetic),
-                        { help = false }, callInProgress = true)
-                } else if (details) {
-                    val unlocked = !getSystemService(android.app.KeyguardManager::class.java).isKeyguardLocked
-                    CallRiskDetails(number, item.synthetic, { details = false }, if (unlocked) { { help = true } } else null)
-                }
+                if (details) CallRiskDetails(number, item.signals.community.synthetic, { details = false })
             }
         }
     }

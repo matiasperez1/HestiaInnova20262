@@ -72,7 +72,8 @@ android {
             val demo = groovy.json.JsonSlurper().parse(rootProject.file("backend/demo.config.json")) as Map<*, *>
             val port=(demo["apiPort"] as Number).toInt()
             require(port in 1024..65535)
-            buildConfigField("String","LOCAL_DEMO_API_URL","\"http://10.0.2.2:$port\"")
+            val host = if (providers.gradleProperty("localDemoUsb").orNull == "true") "127.0.0.1" else "10.0.2.2"
+            buildConfigField("String","LOCAL_DEMO_API_URL","\"http://$host:$port\"")
             buildConfigField("boolean","LOCAL_DEMO_DEFAULT",(providers.environmentVariable("LOCAL_DEMO").orNull == "true").toString())
         }
         release {

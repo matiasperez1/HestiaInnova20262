@@ -36,6 +36,9 @@ class PrivacyBoundaryTest {
         assertFalse(NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted("example.invalid"))
         assertTrue(NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted("10.0.2.2"))
         assertEquals(PackageManager.PERMISSION_DENIED, pm.checkPermission("android.permission.READ_CALL_LOG", pkg))
+        val permissions = pm.getPackageInfo(pkg, PackageManager.GET_PERMISSIONS).requestedPermissions.orEmpty()
+        assertTrue("android.permission.READ_CONTACTS" in permissions)
+        assertFalse("android.permission.WRITE_CONTACTS" in permissions)
     }
 
     @Test fun lockedCallKeepsActionsAndHidesTheNumberAndDetails() {
@@ -49,9 +52,12 @@ class PrivacyBoundaryTest {
                     onReject = {},
                     onAnswer = {},
                     showPrivateDetails = !locked.value,
+                    contactName = "Contacto de prueba",
                 )
             }
         }
+        compose.onNodeWithText("Contacto de prueba").assertIsDisplayed()
+        compose.onNodeWithText("202 555 0147").assertIsDisplayed()
         compose.onNodeWithText("Ver por qué").performScrollTo().performClick()
         compose.onNodeWithText("Por qué Hestia la marcó").assertIsDisplayed()
         compose.runOnIdle { locked.value = true }
@@ -62,6 +68,7 @@ class PrivacyBoundaryTest {
                 .assertHasClickAction().assertHeightIsAtLeast(48.dp).assertWidthIsAtLeast(48.dp)
         }
         compose.onNodeWithText("202 555 0147").assertDoesNotExist()
+        compose.onNodeWithText("Contacto de prueba").assertDoesNotExist()
         compose.onNodeWithText("Ver por qué").assertDoesNotExist()
         compose.onNodeWithText("Por qué Hestia la marcó").assertDoesNotExist()
     }

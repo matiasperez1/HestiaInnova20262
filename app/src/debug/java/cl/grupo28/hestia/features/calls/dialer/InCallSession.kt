@@ -3,6 +3,7 @@ package cl.grupo28.hestia.features.calls.dialer
 import android.app.role.RoleManager
 import android.content.Context
 import cl.grupo28.hestia.data.calls.RecentCall
+import cl.grupo28.hestia.domain.PersonalReportReason
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -20,6 +21,8 @@ internal data class CallUi(
     val canSwitchSpeaker: Boolean,
     val reportNumber: String?,
     val shareableNumber: String?,
+    val connectedAtMillis: Long?,
+    val personalReason: PersonalReportReason? = null,
 )
 
 internal enum class CallCommand { Answer, Reject, HangUp, Mute, Speaker }

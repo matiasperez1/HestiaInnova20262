@@ -21,7 +21,7 @@ private val steps = listOf(
     SetupStep("Tu cuenta Google", "Tu cuenta te identifica en Hestia. Tus contactos y lecciones siguen guardados solo en este teléfono.", HestiaSymbol.LOCK, "Iniciar sesión con Google", "Continuar sin cuenta"),
     SetupStep("Conectar Gmail", "Hestia revisará tus correos para identificar posibles estafas.", HestiaSymbol.MAIL, "Autorizar lectura de Gmail", "Continuar sin Gmail"),
     SetupStep("Identificar llamadas", "Hestia puede identificar números sospechosos antes de que contestes.", HestiaSymbol.PHONE, "Activar identificación", "Continuar sin activar"),
-    SetupStep("Llamadas de tus contactos", "En esta etapa revisamos las llamadas de números que no están guardados en tu agenda.", HestiaSymbol.FAMILY, "Incluir llamadas de mi agenda", "Continuar sin agenda"),
+    SetupStep(agendaOnboardingTitle, agendaOnboardingDescription, HestiaSymbol.FAMILY, next = "Continuar sin agenda"),
     SetupStep("Recibir avisos", "Te avisaremos si detectamos algo sospechoso.", HestiaSymbol.ALERT, "Activar notificaciones", "Continuar sin avisos"),
     SetupStep("A tu ritmo", "Puedes usar Hestia y configurar la protección más adelante.", HestiaSymbol.SHIELD, next = "Entrar a Hestia"),
 )
@@ -42,16 +42,21 @@ fun OnboardingScreen(step: Int, saving: Boolean, onNext: () -> Unit, onBack: () 
         if (step == 1) AccountCard(account, onSignIn, onSignOut, onRetryAccount)
         else if (step == 2) GmailPanel(gmail, onConnectGmail, onSyncGmail, onDisconnectGmail)
         else if (step == 3) CallRoleContent(calls)
+        else if (step == 4) AgendaOnboardingContent { label ->
+            PrimaryButton(if (saving) "Guardando…" else label, onNext, enabled = !saving && !account.busy)
+        }
         else if (step == 5) CallNoticeContent(calls)
-        else if (step != 4) page.action?.let {
+        else page.action?.let {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 PrimaryButton(it, {}, enabled = false)
                 Text("Disponible próximamente", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        if ((step == 1 && account.account == null) || (step == 2 && !gmail.verified)) {
-            SecondaryButton(if (saving) "Guardando…" else page.next, onNext, enabled = !saving && !account.busy && !gmail.busy)
-        } else PrimaryButton(if (saving) "Guardando…" else if (step == 1 || (step == 2 && gmail.verified) || (step == 3 && calls.state.active) || (step == 5 && calls.state.noticesEnabled)) "Continuar" else page.next, onNext, enabled = !saving && !account.busy)
+        if (step != 4) {
+            if ((step == 1 && account.account == null) || (step == 2 && !gmail.verified)) {
+                SecondaryButton(if (saving) "Guardando…" else page.next, onNext, enabled = !saving && !account.busy && !gmail.busy)
+            } else PrimaryButton(if (saving) "Guardando…" else if (step == 1 || (step == 2 && gmail.verified) || (step == 3 && calls.state.active) || (step == 5 && calls.state.noticesEnabled)) "Continuar" else page.next, onNext, enabled = !saving && !account.busy)
+        }
         if (step > 0) TextButton(onBack, Modifier.heightIn(min = 48.dp), enabled = !saving && !account.busy) { Text("Atrás") }
     }
 }

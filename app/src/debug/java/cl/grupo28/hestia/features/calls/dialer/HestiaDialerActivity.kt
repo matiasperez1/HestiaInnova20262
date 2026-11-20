@@ -20,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -33,8 +34,11 @@ import cl.grupo28.hestia.core.theme.HestiaTheme
 import cl.grupo28.hestia.core.accessibility.DisplayPreferences
 import cl.grupo28.hestia.data.DataStoreSettingsRepository
 import cl.grupo28.hestia.features.calls.CallAction
-import cl.grupo28.hestia.features.calls.PhoneContacts
 import cl.grupo28.hestia.features.calls.PhoneRecentList
+import cl.grupo28.hestia.features.contacts.AgendaMatches
+import cl.grupo28.hestia.features.contacts.AgendaUse
+import cl.grupo28.hestia.features.contacts.AgendaWindow
+import cl.grupo28.hestia.features.contacts.rememberAgendaAccess
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.catch
 import java.io.IOException
@@ -42,7 +46,7 @@ import java.util.Locale
 
 class HestiaDialerActivity : ComponentActivity() {
     private var number by mutableStateOf("")
-    private var error by mutableStateOf<String?>(null)
+    private var intentRevision by mutableIntStateOf(0)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,15 +56,11 @@ class HestiaDialerActivity : ComponentActivity() {
             .catch { if (it !is IOException) throw it }
         setContent {
             val prefs by display.collectAsState(initial = DisplayPreferences())
-            val requestPhone = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-                error = if (it) "Permiso concedido. Pulsa Llamar para continuar."
-                    else "Concede permiso de llamadas en Ajustes para usar el marcador."
-            }
             HestiaTheme(prefs) {
                 val colors = MaterialTheme.colorScheme
                 val type = MaterialTheme.typography
-                val canDial = number.any(Char::isDigit)
                 var selection by rememberSaveable { mutableStateOf<DialerSelection?>(null) }
+                val agenda = if (number.isNotEmpty() || selection == DialerSelection.CONTACTS) rememberAgendaAccess() else null
                 Scaffold(
                     containerColor = colors.background,
                     topBar = {
@@ -84,36 +84,11 @@ class HestiaDialerActivity : ComponentActivity() {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        Text(
-                            number.ifEmpty { "Ingresa un número" }.let {
-                                if (canDial) PhoneNumberUtils.formatNumber(number, Locale.getDefault().country.ifEmpty { "CL" }) ?: number else it
-                            },
-                            style = if (number.isEmpty()) type.titleLarge else type.displaySmall,
-                            textAlign = TextAlign.Center,
-                        )
-                        PhoneKeypad(
-                            onKey = { number = clean(number + it); error = null },
-                            showLetters = true,
-                            onPlus = { if (number.isEmpty()) number = "+" },
-                        )
-                        Box(Modifier.widthIn(max = 340.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            CallAction("Llamar", colors.secondary, colors.onSecondary, enabled = canDial, diameter = 96.dp) {
-                                when {
-                                    !holdsDialerRole() -> error = "Selecciona Hestia como aplicación de teléfono en la pestaña Teléfono."
-                                    ContextCompat.checkSelfPermission(this@HestiaDialerActivity, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED ->
-                                        requestPhone.launch(Manifest.permission.CALL_PHONE)
-                                    else -> placeCall()
-                                }
-                            }
-                            TextButton(
-                                onClick = { number = number.dropLast(1); error = null },
-                                modifier = Modifier.align(Alignment.CenterEnd).sizeIn(minWidth = 56.dp, minHeight = 56.dp)
-                                    .semantics { contentDescription = "Borrar último dígito" },
-                                enabled = number.isNotEmpty(),
-                            ) { PhoneIcon(PhoneGlyph.Delete, modifier = Modifier.size(30.dp)) }
+                        key(intentRevision) {
+                            DialerPad(number, { number = it }, matches = {
+                                agenda?.let { AgendaMatches(it, number) { picked -> number = cleanDialNumber(picked) } }
+                            })
                         }
-                        error?.let { Text(it, Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                            color = colors.error, style = type.bodyMedium, textAlign = TextAlign.Center) }
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             SecondaryButton("Recientes", { selection = DialerSelection.RECENT }, Modifier.weight(1f))
                             SecondaryButton("Contactos", { selection = DialerSelection.CONTACTS }, Modifier.weight(1f))
@@ -121,15 +96,14 @@ class HestiaDialerActivity : ComponentActivity() {
                     }
                 }
                 selection?.let { source ->
-                    val select: (String) -> Unit = { picked -> number = clean(picked); error = null; selection = null }
-                    AlertDialog(
+                    val select: (String) -> Unit = { picked -> number = cleanDialNumber(picked); selection = null }
+                    if (source == DialerSelection.CONTACTS && agenda != null) {
+                        AgendaWindow(agenda, AgendaUse.PickNumber, onClose = { selection = null }, onChooseNumber = select)
+                    } else AlertDialog(
                         onDismissRequest = { selection = null },
                         title = { Text(source.label) },
                         text = { Column(Modifier.verticalScroll(rememberScrollState())) {
-                            when (source) {
-                                DialerSelection.RECENT -> PhoneRecentList(select)
-                                DialerSelection.CONTACTS -> PhoneContacts(select)
-                            }
+                            PhoneRecentList(select)
                         } },
                         confirmButton = { TextButton({ selection = null }) { Text("Cerrar") } },
                     )
@@ -142,7 +116,7 @@ class HestiaDialerActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         number = dialedNumber(intent)
-        error = null
+        intentRevision++
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -151,20 +125,100 @@ class HestiaDialerActivity : ComponentActivity() {
     }
 
     private fun dialedNumber(intent: Intent): String =
-        clean(intent.data?.takeIf { intent.action == Intent.ACTION_DIAL && it.scheme == "tel" }?.schemeSpecificPart.orEmpty())
+        cleanDialNumber(intent.data?.takeIf { intent.action == Intent.ACTION_DIAL && it.scheme == "tel" }?.schemeSpecificPart.orEmpty())
 
-    private fun clean(input: String): String = input.filter { it in "0123456789*#+" }.take(32)
+}
 
-    private fun placeCall() {
-        try {
-            // Telecom selects the line and uses the preloaded dialer for emergencies.
-            getSystemService(TelecomManager::class.java).placeCall(Uri.fromParts("tel", number, null), Bundle())
-            error = null
-        } catch (_: SecurityException) {
-            error = "Android no autorizó la llamada. Revisa el permiso de teléfono y la aplicación predeterminada."
-        } catch (_: RuntimeException) {
-            error = "No se pudo iniciar la llamada. Revisa el número y la línea."
+internal fun cleanDialNumber(input: String): String =
+    input.filter { it in "0123456789*#+,;" }.take(32)
+
+internal enum class DialAttempt(val message: String?) {
+    Started(null),
+    NeedsRole("Elige Hestia como aplicación de teléfono en Protección."),
+    NeedsPermission(null),
+    Forbidden("Android no autorizó la llamada. Revisa el permiso y la aplicación predeterminada."),
+    Failed("No se pudo iniciar la llamada. Revisa el número y la línea."),
+}
+
+internal data class PhoneCalling(val feedback: String?, val dial: (String) -> DialAttempt)
+
+@Composable
+internal fun rememberPhoneCalling(): PhoneCalling {
+    val context = LocalContext.current
+    var feedback by remember { mutableStateOf<String?>(null) }
+    val requestPhone = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        feedback = if (it) "Permiso concedido. Pulsa Llamar para continuar."
+            else "Concede el permiso de teléfono para realizar llamadas con Hestia."
+    }
+    return PhoneCalling(feedback) { number ->
+        feedback = null
+        when {
+            !context.holdsDialerRole() -> DialAttempt.NeedsRole
+            ContextCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED -> {
+                requestPhone.launch(Manifest.permission.CALL_PHONE)
+                DialAttempt.NeedsPermission
+            }
+            else -> try {
+                val telecom = context.getSystemService(TelecomManager::class.java)
+                if (telecom == null) DialAttempt.Failed else {
+                    telecom.placeCall(Uri.fromParts("tel", number, null), Bundle())
+                    DialAttempt.Started
+                }
+            } catch (_: SecurityException) {
+                DialAttempt.Forbidden
+            } catch (_: RuntimeException) {
+                DialAttempt.Failed
+            }
         }
+    }
+}
+
+@Composable
+internal fun DialerPad(
+    number: String,
+    onNumberChange: (String) -> Unit,
+    onSetup: (() -> Unit)? = null,
+    matches: @Composable () -> Unit = {},
+) {
+    val calling = rememberPhoneCalling()
+    var attempt by remember(number) { mutableStateOf<DialAttempt?>(null) }
+    val colors = MaterialTheme.colorScheme
+    val type = MaterialTheme.typography
+    val canDial = number.any(Char::isDigit)
+    Column(
+        Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        val formatted = PhoneNumberUtils.formatNumber(number, Locale.getDefault().country.ifEmpty { "CL" })
+        Text(
+            if (canDial) formatted ?: number else number.ifEmpty { "Ingresa un número" },
+            style = if (number.isEmpty()) type.titleLarge else type.displaySmall,
+            textAlign = TextAlign.Center,
+        )
+        PhoneKeypad(
+            onKey = { onNumberChange(cleanDialNumber(number + it)) },
+            showLetters = true,
+            onPlus = { if (number.isEmpty()) onNumberChange("+") },
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            CallAction("Llamar", colors.secondary, colors.onSecondary, enabled = canDial, diameter = 88.dp) {
+                attempt = calling.dial(number)
+            }
+            TextButton(
+                onClick = { onNumberChange(number.dropLast(1)) },
+                modifier = Modifier.sizeIn(minWidth = 56.dp, minHeight = 56.dp)
+                    .semantics { contentDescription = "Borrar último dígito" },
+                enabled = number.isNotEmpty(),
+            ) { PhoneIcon(PhoneGlyph.Delete, modifier = Modifier.size(30.dp)) }
+        }
+        val message = attempt?.message ?: calling.feedback.takeIf { attempt == DialAttempt.NeedsPermission }
+        message?.let { Text(it, Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            color = colors.onSurfaceVariant, style = type.bodyMedium, textAlign = TextAlign.Center) }
+        if (attempt == DialAttempt.NeedsRole && onSetup != null) {
+            SecondaryButton("Ir a Protección", onSetup)
+        }
+        matches()
     }
 }
 

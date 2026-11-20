@@ -156,3 +156,11 @@ Familia y Teléfono comparten los contactos locales de DataStore. Familia permit
 ## ETAPA 6 — Educación y prevención
 
 Contenido y ejercicios deterministas incluidos en DEBUG y RELEASE. El progreso se guarda en el DataStore del dispositivo mediante identificadores estables. La clave histórica de cinco lecciones se conserva y sus finalizaciones se reconocen al leerla. La ruta contextual solo recibe un identificador educativo y devuelve a la pantalla de origen. Los accesos telefónicos aparecen desde Protección y Recientes, fuera de la llamada. El tema de actuación reutiliza Pedir ayuda. Mantener la exclusión de copias en la nube del DataStore. Ver [guía de educación](docs/ETAPA_6_EDUCACION_PREVENCION.md).
+
+## ETAPA 9.2 — Módulo telefónico
+
+DEBUG abre Teléfono en Recientes y ofrece Contactos de confianza, Teclado y Protección. `ROLE_DIALER` se solicita por elección expresa desde Protección. Recientes conserva solo llamadas gestionadas por Hestia, con activación y borrado confirmados. La agenda completa y `READ_CONTACTS` quedan para 9.3. La conexión LAN y los reportes sobre números reales quedan fuera de esta etapa. Pedir ayuda está disponible en correos de riesgo alto y en llamadas sospechosas aún activas gestionadas por Hestia. El compositor y la lista de confianza se conservan. Recientes carece de acceso contextual a Aprender. Ver [guía del módulo y pruebas SIM](docs/ETAPA_9_2_MODULO_TELEFONICO.md).
+
+## ETAPA 9.2.1 — Corrección del piloto telefónico
+
+El piloto DEBUG puede solicitar `READ_CONTACTS` de forma opcional desde el onboarding y Teléfono. La agenda de Android se consulta en memoria. Solo una elección explícita guarda un nombre y un número en Familia. El teclado manual permanece disponible con independencia del permiso de agenda. La autorización de llamadas se comprueba mediante `ROLE_DIALER` y `CALL_PHONE`. RELEASE conserva su comportamiento. Ver [corrección y validación](docs/ETAPA_9_2_1_CORRECCION_CONTACTOS_Y_RESPONSIVIDAD.md).

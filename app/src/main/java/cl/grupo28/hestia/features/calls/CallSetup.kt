@@ -6,6 +6,7 @@ import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -83,4 +84,33 @@ fun CallNoticeContent(setup: CallSetup) {
         style = MaterialTheme.typography.bodyMedium,
     )
     if (!setup.state.noticesEnabled) SecondaryButton("Activar notificaciones", setup.enableNotices)
+}
+
+@Composable
+internal fun CallContactCoverage() {
+    val context = LocalContext.current
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val permission = Manifest.permission.READ_CONTACTS
+    fun hasPermission() = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+    var granted by remember(context) { mutableStateOf(hasPermission()) }
+    var declined by remember { mutableStateOf(false) }
+    val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        granted = hasPermission()
+        declined = !granted
+    }
+    DisposableEffect(lifecycle, context) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) granted = hasPermission()
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+    if (granted) Text("Identificación disponible también para números guardados en tu agenda.")
+    else {
+        Text("Para advertirte también sobre números guardados, Android necesita permiso de Contactos.")
+        SecondaryButton("Incluir llamadas de mis contactos", { request.launch(permission) })
+        if (declined) SecondaryButton("Abrir ajustes de Android", {
+            context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null)))
+        })
+    }
 }

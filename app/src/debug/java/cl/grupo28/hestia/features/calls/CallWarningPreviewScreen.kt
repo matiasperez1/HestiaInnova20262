@@ -1,5 +1,7 @@
 package cl.grupo28.hestia.features.calls
 
+import cl.grupo28.hestia.domain.PersonalReportReason
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -87,6 +89,8 @@ internal fun HestiaIncomingCall(
     onAnswer: () -> Unit,
     onHelp: (() -> Unit)? = null,
     showPrivateDetails: Boolean = true,
+    contactName: String? = null,
+    personalReason: PersonalReportReason? = null,
 ) {
     var showDetails by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(showPrivateDetails) { if (!showPrivateDetails) showDetails = false }
@@ -112,10 +116,13 @@ internal fun HestiaIncomingCall(
                     style = type.titleLarge,
                     textAlign = TextAlign.Center,
                 )
-                Text(if (showPrivateDetails) number else "Número oculto", style = type.displaySmall, textAlign = TextAlign.Center)
+                val name = contactName.takeIf { showPrivateDetails }
+                Text(if (showPrivateDetails) name ?: number else "Número oculto", style = type.displaySmall, textAlign = TextAlign.Center)
+                if (name != null) Text(number, style = type.bodyLarge, textAlign = TextAlign.Center)
                 testLabel?.let { Text(it, style = type.bodyMedium, color = colors.onSurfaceVariant, textAlign = TextAlign.Center) }
             }
 
+            personalReason?.let { PersonalCallWarning(it, showReason = showPrivateDetails) }
             if (reported) CallRiskCard(
                 if (showPrivateDetails) { { showDetails = true } } else null,
                 Modifier.padding(bottom = 20.dp), inclusive = true,

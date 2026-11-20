@@ -39,20 +39,22 @@ import cl.grupo28.hestia.data.calls.demoCallNumber
 import cl.grupo28.hestia.domain.HelpRequest
 import cl.grupo28.hestia.domain.HelpTopic
 import cl.grupo28.hestia.features.calls.HestiaIncomingCall
+import cl.grupo28.hestia.features.calls.PersonalCallWarning
 import cl.grupo28.hestia.features.calls.ContextualCallReport
 import cl.grupo28.hestia.features.calls.recentDate
 import cl.grupo28.hestia.features.calls.CallRiskCard
 import cl.grupo28.hestia.features.calls.CallRiskDetails
 import cl.grupo28.hestia.features.calls.CallAction
 import cl.grupo28.hestia.features.calls.PhoneContacts
-import cl.grupo28.hestia.features.calls.helpRequest
+import cl.grupo28.hestia.features.calls.findTrustedContact
 import cl.grupo28.hestia.features.family.TrustHelpDialog
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.IOException
+import java.util.Locale
 
 class TelecomCallActivity : ComponentActivity() {
     private var locked by mutableStateOf(true)
@@ -96,12 +98,11 @@ class TelecomCallActivity : ComponentActivity() {
         setTurnScreenOn(true)
         enableEdgeToEdge()
         val settings = DataStoreSettingsRepository(applicationContext).settings
-        val display = settings.map { it.display }
-            .catch { if (it !is IOException) throw it }
+        val availableSettings = settings.catch { if (it !is IOException) throw it }
         val reports = DemoCallReports.from(this)
         val keyguard = getSystemService(KeyguardManager::class.java)
         setContent {
-            val prefs by display.collectAsState(initial = DisplayPreferences())
+            val preferences by availableSettings.collectAsState(initial = null)
             val ui by InCallSession.current.collectAsState()
             var shownCall by remember { mutableStateOf(InCallSession.current.value?.id) }
             var postCall by remember { mutableStateOf<RecentCall?>(null) }
@@ -121,17 +122,16 @@ class TelecomCallActivity : ComponentActivity() {
                     if (activeReport?.callId != callId) activeReport = null
                     return@LaunchedEffect
                 }
+                help = null
                 val ended = InCallSession.takeCompleted(shownCall)
                 // Keep the existing report dialog alive until the send result is shown.
                 if (activeReport?.let { it.callId == shownCall } == true) return@LaunchedEffect
                 val canOffer = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && !keyguard.isKeyguardLocked
-                if (!canOffer || (ended == null && help == null)) {
+                if (!canOffer || ended == null) {
                     finish()
                     return@LaunchedEffect
                 }
-                if (ended == null) return@LaunchedEffect
                 postCall = ended
-                help = help?.copy(callTime = ended.at)
                 val number = demoCallNumber(ended.number) ?: return@LaunchedEffect
                 canReportPostCall = try {
                     withTimeoutOrNull(2_800) {
@@ -145,7 +145,7 @@ class TelecomCallActivity : ComponentActivity() {
                 } catch (_: Exception) { false }
                 if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) || keyguard.isKeyguardLocked) finish()
             }
-            HestiaTheme(prefs) {
+            HestiaTheme(preferences?.display ?: DisplayPreferences()) {
                 Scaffold(
                     containerColor = MaterialTheme.colorScheme.background,
                     topBar = {
@@ -176,6 +176,8 @@ class TelecomCallActivity : ComponentActivity() {
                     Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
                         ui?.let { call ->
                             key(call.id) {
+                                val contactName = if (locked) null else preferences?.contacts.orEmpty()
+                                    .findTrustedContact(call.shareableNumber)?.name
                                 val send: (CallCommand) -> Unit = { InCallSession.service?.perform(call.id, it) }
                                 if (call.state == Call.STATE_RINGING) {
                                     HestiaIncomingCall(
@@ -184,12 +186,14 @@ class TelecomCallActivity : ComponentActivity() {
                                         testLabel = "Número de prueba".takeIf { call.synthetic },
                                         onReject = { send(CallCommand.Reject) },
                                         onAnswer = { send(CallCommand.Answer) },
-                                        onHelp = { if (!keyguard.isKeyguardLocked) help = call.helpRequest() },
+                                        onHelp = { if (call.reported && !keyguard.isKeyguardLocked) help = call.helpRequest() },
                                         showPrivateDetails = !locked,
+                                        contactName = contactName,
+                                        personalReason = call.personalReason,
                                     )
-                                } else OngoingCallScreen(call, locked, send,
+                                } else OngoingCallScreen(call, contactName, locked, send,
                                     { number -> if (!keyguard.isKeyguardLocked) activeReport = ActiveCallReport(call.id, number) },
-                                    { if (!keyguard.isKeyguardLocked) help = call.helpRequest() })
+                                    { if (call.reported && !keyguard.isKeyguardLocked) help = call.helpRequest() })
                             }
                         }
                         if (ui == null && !locked) {
@@ -200,18 +204,14 @@ class TelecomCallActivity : ComponentActivity() {
                             Column(Modifier.align(Alignment.Center).padding(22.dp).verticalScroll(rememberScrollState()),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Text("Llamada finalizada", style = MaterialTheme.typography.titleLarge)
-                                postCall?.let { ended ->
-                                    PrimaryButton("Pedir ayuda", { help = ended.helpRequest() })
-                                    SecondaryButton("Volver a Recientes", goToRecents)
-                                }
+                                if (postCall != null) SecondaryButton("Volver a Recientes", goToRecents)
                             }
                             postCall?.let { ended ->
-                                if (help == null && canReportPostCall) ContextualCallReport(demoCallNumber(ended.number) ?: return@let,
+                                if (canReportPostCall) ContextualCallReport(demoCallNumber(ended.number) ?: return@let,
                                     onClose = { finish() }, postCall = true, contextLabel = recentDate(ended.at),
                                     onAnswered = { persona ->
                                         PhoneRecents(applicationContext).markAnswered(ended.id, persona)
                                     }, afterCallActions = {
-                                        SecondaryButton("Pedir ayuda", { help = ended.helpRequest() })
                                         SecondaryButton("Volver a Recientes", goToRecents)
                                     })
                             }
@@ -227,11 +227,11 @@ class TelecomCallActivity : ComponentActivity() {
                                 }, onSubmit = hangUp)
                             }
                         }
-                        help?.takeUnless { locked }?.let { request ->
-                            TrustHelpDialog(request, onClose = {
-                                help = null
-                                if (InCallSession.current.value == null && postCall == null) finish()
-                            }, callInProgress = ui != null, canOpenNow = { InCallSession.current.value == null })
+                        if (!locked && ui?.reported == true && ui?.state != Call.STATE_DISCONNECTING) {
+                            help?.let { request ->
+                                TrustHelpDialog(request, onClose = { help = null }, callInProgress = true,
+                                    canOpenNow = { false })
+                            }
                         }
                     }
                 }
@@ -254,14 +254,14 @@ class TelecomCallActivity : ComponentActivity() {
 private data class ActiveCallReport(val callId: String, val number: String)
 
 private fun CallUi.helpRequest() = HelpRequest(
-    if (reported) HelpTopic.CALL_WARNING else HelpTopic.CALL, synthetic, shareableNumber,
+    HelpTopic.CALL_WARNING, synthetic, shareableNumber,
 )
 
 private enum class CallPanel { Keypad, Contacts, Help, Info }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun OngoingCallScreen(call: CallUi, locked: Boolean, send: (CallCommand) -> Unit, onReport: (String) -> Unit, onHelp: () -> Unit) {
+private fun OngoingCallScreen(call: CallUi, contactName: String?, locked: Boolean, send: (CallCommand) -> Unit, onReport: (String) -> Unit, onHelp: () -> Unit) {
     var panel by rememberSaveable { mutableStateOf<CallPanel?>(null) }
     LaunchedEffect(locked) { if (locked) panel = null }
     val connected = call.state == Call.STATE_ACTIVE
@@ -288,11 +288,14 @@ private fun OngoingCallScreen(call: CallUi, locked: Boolean, send: (CallCommand)
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Column(Modifier.padding(bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(if (locked) "Número oculto" else call.number, style = type.displaySmall, textAlign = TextAlign.Center)
+                Text(if (locked) "Número oculto" else contactName ?: call.number, style = type.displaySmall, textAlign = TextAlign.Center)
+                if (!locked && contactName != null) Text(call.number, style = type.bodyLarge, textAlign = TextAlign.Center)
                 StatusPill(state, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+                call.connectedAtMillis?.let { CallDuration(it) }
             }
             if (call.reported) CallRiskCard(if (locked) null else { { panel = CallPanel.Info } }, Modifier.padding(bottom = 12.dp), inclusive = true,
                 onReport = reportAction)
+            call.personalReason?.let { PersonalCallWarning(it, showReason = !locked) }
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 FlowRow(Modifier.fillMaxWidth(), maxItemsInEachRow = columns,
@@ -310,7 +313,7 @@ private fun OngoingCallScreen(call: CallUi, locked: Boolean, send: (CallCommand)
                         enabled = connected && call.canSwitchSpeaker, selected = call.speaker,
                     ) { send(CallCommand.Speaker) }
                     PhoneControl("Contactos", PhoneGlyph.Contacts, Modifier.width(controlWidth), enabled = !locked) { panel = CallPanel.Contacts }
-                    PhoneControl("Ayuda", PhoneGlyph.Help, Modifier.width(controlWidth)) { panel = CallPanel.Help }
+                    if (call.reported) PhoneControl("Ayuda", PhoneGlyph.Help, Modifier.width(controlWidth)) { panel = CallPanel.Help }
                     PhoneControl("Reportar", PhoneGlyph.Report, Modifier.width(controlWidth), enabled = reportAction != null) { reportAction?.invoke() }
                 }
                 CallAction("Colgar", colors.error, colors.onError, rotation = 135f, diameter = 96.dp) {
@@ -346,10 +349,27 @@ private fun OngoingCallScreen(call: CallUi, locked: Boolean, send: (CallCommand)
             title = { Text("¿Necesitas ayuda con esta llamada?") },
             text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("No compartas claves ni códigos. Puedes colgar si tienes dudas y verificar por un canal oficial.")
-                if (!locked) SecondaryButton("Pedir ayuda a una persona de confianza", { panel = null; onHelp() })
+                if (!locked && call.reported) SecondaryButton("Pedir ayuda a una persona de confianza", { panel = null; onHelp() })
             } },
             confirmButton = { TextButton({ panel = null }, Modifier.heightIn(min = 48.dp)) { Text("Volver a la llamada") } },
         )
         null -> Unit
     }
+}
+
+
+@Composable
+private fun CallDuration(connectedAtMillis: Long) {
+    val elapsed by produceState(0L, connectedAtMillis) {
+        while (true) {
+            value = ((System.currentTimeMillis() - connectedAtMillis) / 1000).coerceAtLeast(0)
+            delay(1000)
+        }
+    }
+    val hours = elapsed / 3600
+    val minutes = elapsed / 60 % 60
+    val seconds = elapsed % 60
+    val time = if (hours == 0L) String.format(Locale.ROOT, "%02d:%02d", minutes, seconds)
+        else String.format(Locale.ROOT, "%d:%02d:%02d", hours, minutes, seconds)
+    Text("Duración $time", style = MaterialTheme.typography.bodyMedium)
 }

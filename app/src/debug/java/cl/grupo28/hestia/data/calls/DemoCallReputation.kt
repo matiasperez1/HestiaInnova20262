@@ -12,6 +12,7 @@ import cl.grupo28.hestia.domain.automatic.DemoSelection
 import cl.grupo28.hestia.domain.normalizeCallNumber
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
@@ -107,6 +108,16 @@ internal class DemoReputationCache private constructor(context: Context) {
 
 internal data class DemoReports(val snapshot: DemoReputationSnapshot, val own: Map<String, CallReportCategory>)
 
+internal interface DemoCallReportRepository {
+    val persona: StateFlow<CallPersona>
+    val ownership: StateFlow<Map<CallPersona, Map<String, CallReportCategory>>>
+    val reputation: StateFlow<DemoReputationSnapshot?>
+    suspend fun cached(): DemoReputationSnapshot?
+    suspend fun sync(persona: CallPersona): DemoReports
+    suspend fun save(persona: CallPersona, number: String, category: CallReportCategory, replace: Boolean = false)
+    suspend fun withdraw(persona: CallPersona, number: String)
+}
+
 private fun parseSnapshot(json: JSONObject, syncedAt: Instant, allowLegacyCache: Boolean = false): DemoReports {
     val threshold = json.getInt("threshold").also { require(it >= 2) }
     val entries = json.getJSONArray("entries").also { require(it.length() <= 100) }
@@ -134,13 +145,15 @@ private fun parseSnapshot(json: JSONObject, syncedAt: Instant, allowLegacyCache:
 internal fun canSyncCallDemo(context: Context): Boolean = Build.VERSION.SDK_INT < 37 ||
     ContextCompat.checkSelfPermission(context, CALL_DEMO_PERMISSION) == PackageManager.PERMISSION_GRANTED
 
-internal class DemoCallReports private constructor(context: Context) {
+internal class DemoCallReports private constructor(context: Context) : DemoCallReportRepository {
     private val app = context.applicationContext
     private val preferences = app.getSharedPreferences("phone_demo_identity", Context.MODE_PRIVATE)
     private val selected = MutableStateFlow(CallPersona.entries.firstOrNull { it.id == preferences.getString("persona", null) } ?: CallPersona.ANA)
-    val persona = selected.asStateFlow()
+    override val persona = selected.asStateFlow()
     private val known = MutableStateFlow<Map<CallPersona, Map<String, CallReportCategory>>>(emptyMap())
-    val ownership = known.asStateFlow()
+    override val ownership = known.asStateFlow()
+    private val latest = MutableStateFlow<DemoReputationSnapshot?>(null)
+    override val reputation = latest.asStateFlow()
 
     fun select(persona: CallPersona) {
         preferences.edit().putString("persona", persona.id).apply()
@@ -156,23 +169,28 @@ internal class DemoCallReports private constructor(context: Context) {
         }, localPermission = { canSyncCallDemo(app) })
     }
 
-    suspend fun cached(): DemoReputationSnapshot? = withContext(Dispatchers.IO) { cache.read() }
+    override suspend fun cached(): DemoReputationSnapshot? = withContext(Dispatchers.IO) {
+        cache.read().also { latest.compareAndSet(null, it) }
+    }
 
-    suspend fun sync(persona: CallPersona): DemoReports = cache.syncLock.withLock {
+    override suspend fun sync(persona: CallPersona): DemoReports = cache.syncLock.withLock {
         val json = request(persona, "/demo/calls/reputation")
         val result = parseSnapshot(json, Instant.now())
         withContext(Dispatchers.IO) { cache.save(result.snapshot) }
         known.update { it + (persona to result.own) }
+        latest.value = result.snapshot
         result
     }
 
-    suspend fun save(persona: CallPersona, number: String, category: CallReportCategory, replace: Boolean = false) = cache.syncLock.withLock {
+    override suspend fun save(persona: CallPersona, number: String, category: CallReportCategory, replace: Boolean) = cache.syncLock.withLock {
+        require(demoCallNumber(number) == number)
         request(persona, "/demo/calls/report", JSONObject().put("number", number).put("replace", replace)
             .put("category", category.name).put("consent", true))
         known.update { it + (persona to (it[persona].orEmpty() + (number to category))) }
     }
 
-    suspend fun withdraw(persona: CallPersona, number: String) = cache.syncLock.withLock {
+    override suspend fun withdraw(persona: CallPersona, number: String) = cache.syncLock.withLock {
+        require(demoCallNumber(number) == number)
         request(persona, "/demo/calls/withdraw", JSONObject().put("number", number))
         known.update { entries -> entries[persona]?.let { entries + (persona to (it - number)) } ?: entries }
     }

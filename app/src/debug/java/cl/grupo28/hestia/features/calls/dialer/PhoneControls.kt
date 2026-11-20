@@ -23,6 +23,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 internal enum class PhoneGlyph(val path: String) {
+    Recents("M12,22 A10,10 0,1 0 12,2 A10,10 0,1 0 12,22 M12,6 V12 L16,14"),
+    Shield("M12,22 Q4,18 4,11 V5 L12,2 L20,5 V11 Q20,18 12,22 M8,12 L11,15 L16,9"),
+    Incoming("M17,7 L7,17 M7,10 V17 H14"),
+    Outgoing("M7,17 L17,7 M10,7 H17 V14"),
+    Handset("M6,3 H9 L11,8 L8,10 Q10,14 14,16 L16,13 L21,15 V18 Q21,21 18,21 Q7,20 3,9 Q2,4 6,3 Z"),
+    Missed("M4,7 L10,13 L18,5 M12,5 H18 V11 M7,18 H17"),
+    Declined("M7,7 L17,17 M17,7 L7,17"),
+    More("M5,12 h1 M11.5,12 h1 M18,12 h1"),
     Mic("M9,9 V5 A3,3 0,0 1 15,5 V9 A3,3 0,0 1 9,9 M6,9 V10 A6,6 0,0 0 18,10 V9 M12,16 V21 M9,21 H15"),
     Muted("M9,9 V5 A3,3 0,0 1 15,5 V9 A3,3 0,0 1 9,9 M6,9 V10 A6,6 0,0 0 18,10 V9 M12,16 V21 M9,21 H15 M3,3 L21,21"),
     Digits("M5,5 h1 M11.5,5 h1 M18,5 h1 M5,11 h1 M11.5,11 h1 M18,11 h1 M5,17 h1 M11.5,17 h1 M18,17 h1"),
@@ -30,6 +38,7 @@ internal enum class PhoneGlyph(val path: String) {
     Contacts("M6,3 H19 V21 H6 Z M3,7 H7 M3,12 H7 M3,17 H7 M14,12 A2.5,2.5 0,1 0 14,7 A2.5,2.5 0,1 0 14,12 M10,17 Q10,14 14,14 Q18,14 18,17"),
     Help("M12,22 A10,10 0,1 0 12,2 A10,10 0,1 0 12,22 M9,9 A3,3 0,1 1 14,11 Q12,12 12,15 M12,18 h0.1"),
     Report("M5,21 V3 M5,4 Q8,2 12,4 Q16,6 20,4 V14 Q16,16 12,14 Q8,12 5,14"),
+    Info("M12,22 A10,10 0,1 0 12,2 A10,10 0,1 0 12,22 M12,10 V17 M12,7 h0.1"),
     Delete("M3,12 L9,6 H21 V18 H9 Z M12,10 L16,14 M16,10 L12,14"),
 }
 

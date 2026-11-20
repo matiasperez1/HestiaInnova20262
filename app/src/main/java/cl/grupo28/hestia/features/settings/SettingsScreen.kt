@@ -25,8 +25,12 @@ fun SettingsScreen(preferences: DisplayPreferences, saving: Boolean, onChange: (
         if (showCallSettings) HestiaCard {
             SectionHeader("Identificación de llamadas")
             CallRoleContent(calls)
-            if (calls.state.active) CallNoticeContent(calls)
+            if (calls.state.active) {
+                CallNoticeContent(calls)
+                CallContactCoverage()
+            }
         }
+        if (showCallSettings) PersonalReportsPanel(allowEntry = true)
         HestiaCard {
             SectionHeader("Tamaño del texto")
             TextSize.entries.forEach { size ->

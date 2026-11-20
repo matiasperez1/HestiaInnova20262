@@ -19,7 +19,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,14 +34,12 @@ import cl.grupo28.hestia.core.HestiaViewModel
 import cl.grupo28.hestia.core.components.*
 import cl.grupo28.hestia.core.theme.HestiaTheme
 import cl.grupo28.hestia.domain.EducationIds
-import cl.grupo28.hestia.domain.HelpRequest
 import cl.grupo28.hestia.domain.LessonCheckpoint
 import cl.grupo28.hestia.domain.WeekRange
 import cl.grupo28.hestia.features.onboarding.OnboardingScreen
 import cl.grupo28.hestia.features.summary.SummaryScreen
 import cl.grupo28.hestia.features.education.*
 import cl.grupo28.hestia.features.family.FamilyScreen
-import cl.grupo28.hestia.features.family.TrustHelpDialog
 import cl.grupo28.hestia.features.settings.SettingsScreen
 import cl.grupo28.hestia.features.calls.CallSetup
 import cl.grupo28.hestia.features.calls.rememberCallSetup
@@ -237,18 +234,15 @@ private fun MainNavigation(callSetup: CallSetup, viewModel: HestiaViewModel, acc
         NavHost(nav, startDestination = "summary", modifier = Modifier.padding(padding).consumeWindowInsets(padding),
             enterTransition = { if (noMotion) EnterTransition.None else fadeIn(tween(120)) }, exitTransition = { if (noMotion) ExitTransition.None else fadeOut(tween(80)) }) {
             composable("summary") {
-                var help by rememberSaveable { mutableStateOf(false) }
                 SummaryScreen(
                     WeekRange.current(), state.summary, gmail, automatic, callSetup.state.active,
                     callsAvailable = callSetup.state.available,
                     demoMode = demoMode,
                     onOpenPhone = phone?.let { target -> { openMain(target) } },
-                    onAskForHelp = { help = true },
                     onOpenEducation = { openMain("education") },
                     onOpenAlert = ::openEmailAlert,
                     onOpenGmail = ::openGmail,
                 )
-                if (help) TrustHelpDialog(HelpRequest(), { help = false })
             }
             addPhoneDestination(callSetup, { callWarningPreviewRoute?.let(nav::navigate) }, learnCalls)
             addCallWarningPreview { nav.popBackStack() }
@@ -281,7 +275,7 @@ private fun MainNavigation(callSetup: CallSetup, viewModel: HestiaViewModel, acc
                 val lesson = EducationContent.lessonsById[lessonId]
                 val module = EducationContent.modules.firstOrNull { lesson in it.lessons }
                 if (lesson == null || module == null) ErrorState("No encontramos esta lección.") { openMain("education") }
-                else LessonScreen(module, lesson, state.settings.education.checkpoints[lesson.id] ?: LessonCheckpoint(),
+                else LessonScreen(lesson, state.settings.education.checkpoints[lesson.id] ?: LessonCheckpoint(),
                     state.saving, showDemoReport = phone != null,
                     onProgress = { viewModel.saveLessonCheckpoint(lesson.id, it) },
                     onComplete = { viewModel.completeLesson(lesson.id, it) },

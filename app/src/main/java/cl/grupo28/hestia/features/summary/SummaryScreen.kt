@@ -41,7 +41,6 @@ internal fun SummaryScreen(
     callsAvailable: Boolean = true,
     demoMode: Boolean = automatic?.demoSelected == true,
     onOpenPhone: (() -> Unit)? = null,
-    onAskForHelp: (() -> Unit)? = null,
     onOpenEducation: (() -> Unit)? = null,
     onOpenAlert: ((String) -> Unit)? = null,
     onOpenGmail: () -> Unit,
@@ -93,9 +92,8 @@ internal fun SummaryScreen(
             }
             summary?.reviewedAlerts?.let { Text("Alertas revisadas por ti: $it.") }
         }
-        if (onAskForHelp != null && onOpenEducation != null) HestiaCard {
-            SectionHeader("Ayuda y prevención")
-            SecondaryButton("Pedir ayuda", onAskForHelp)
+        if (onOpenEducation != null) HestiaCard {
+            SectionHeader("Prevención")
             SecondaryButton("Aprender a prevenir estafas", onOpenEducation)
         }
     }

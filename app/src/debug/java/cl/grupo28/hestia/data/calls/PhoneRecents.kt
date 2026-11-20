@@ -24,6 +24,7 @@ internal data class RecentCall(
     val id: String, val number: String, val at: Instant, val kind: RecentKind, val synthetic: Boolean,
     val answeredBy: Set<CallPersona> = emptySet(),
     val warned: Boolean = false,
+    val originalNumber: String = number,
 )
 internal data class RecentsState(val enabled: Boolean, val calls: List<RecentCall>)
 
@@ -46,6 +47,8 @@ internal class PhoneRecents(context: Context) {
             if (!enabled) it.remove(rowsKey)
         }
     }
+
+    suspend fun clear() { store.edit { it.remove(rowsKey) } }
 
     suspend fun record(call: RecentCall) {
         store.edit { preferences ->
@@ -71,7 +74,8 @@ internal class PhoneRecents(context: Context) {
         entries.forEach { entry ->
             put(JSONObject().put("id", entry.id).put("number", entry.number)
                 .put("at", entry.at.toEpochMilli()).put("kind", entry.kind.name).put("synthetic", entry.synthetic)
-                .put("answeredBy", JSONArray(entry.answeredBy.map { it.id })).put("warned", entry.warned))
+                .put("answeredBy", JSONArray(entry.answeredBy.map { it.id })).put("warned", entry.warned)
+                .put("originalNumber", entry.originalNumber))
         }
     }.toString()
 
@@ -84,8 +88,10 @@ internal class PhoneRecents(context: Context) {
                 val personas = CallPersona.entries.filter { persona ->
                     (0 until answered.length()).any { answered.optString(it) == persona.id }
                 }.toSet()
-                RecentCall(row.getString("id"), row.getString("number"), Instant.ofEpochMilli(row.getLong("at")),
-                    RecentKind.valueOf(row.getString("kind")), row.optBoolean("synthetic"), personas, row.optBoolean("warned"))
+                val number = row.getString("number")
+                RecentCall(row.getString("id"), number, Instant.ofEpochMilli(row.getLong("at")),
+                    RecentKind.valueOf(row.getString("kind")), row.optBoolean("synthetic"), personas, row.optBoolean("warned"),
+                    row.optString("originalNumber", number))
             }.getOrNull()
         }
     }

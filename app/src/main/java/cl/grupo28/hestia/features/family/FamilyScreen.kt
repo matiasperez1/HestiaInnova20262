@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import cl.grupo28.hestia.core.HestiaViewModel
 import cl.grupo28.hestia.core.components.*
 import cl.grupo28.hestia.domain.EmergencyContact
-import cl.grupo28.hestia.domain.HelpRequest
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
@@ -30,8 +29,6 @@ fun FamilyScreen(contacts: List<EmergencyContact>, saving: Boolean, model: Hesti
     var editing by remember { mutableStateOf(false) }
     var editContact by remember { mutableStateOf<EmergencyContact?>(null) }
     var deleting by remember { mutableStateOf<EmergencyContact?>(null) }
-    var help by remember { mutableStateOf(false) }
-    var helpContact by remember { mutableStateOf<String?>(null) }
     var advice by rememberSaveable { mutableStateOf(false) }
     val primary = contacts.firstOrNull { it.primary }
 
@@ -65,14 +62,11 @@ fun FamilyScreen(contacts: List<EmergencyContact>, saving: Boolean, model: Hesti
                     EmptyState("Tu lista está vacía", "Agrega a una persona de confianza para poder pedirle ayuda cuando la necesites.", HestiaSymbol.FAMILY)
                     PrimaryButton("Agregar contacto de confianza", { edit() })
                 } else {
-                    PrimaryButton("Pedir ayuda", { helpContact = null; help = true })
                     if (primary == null) Text("Puedes marcar un contacto principal en Administrar contactos.")
                     contacts.forEach { contact ->
                         HestiaCard(color = if (contact.primary) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface) {
                             ContactIdentity(contact)
                             SecondaryButton("Llamar", { onCall(contact) }, Modifier.semantics { contentDescription = "Llamar a ${contact.name}" })
-                            SecondaryButton("Pedir ayuda", { helpContact = contact.id; help = true },
-                                Modifier.semantics { contentDescription = "Pedir ayuda a ${contact.name}" })
                         }
                     }
                     SecondaryButton("Administrar contactos", { managing = true })
@@ -89,7 +83,6 @@ fun FamilyScreen(contacts: List<EmergencyContact>, saving: Boolean, model: Hesti
             confirmButton = { TextButton({ model.removeContact(contact.id) { deleting = null } }, Modifier.heightIn(min = 48.dp), enabled = !saving) { Text("Eliminar contacto") } },
             dismissButton = { TextButton({ deleting = null }, Modifier.heightIn(min = 48.dp), enabled = !saving) { Text("Cancelar") } })
     }
-    if (help) TrustHelpDialog(HelpRequest(), { help = false }, preferredId = helpContact)
     if (advice) AlertDialog(
         onDismissRequest = { advice = false }, title = { Text("Qué hacer si tienes dudas") },
         text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {

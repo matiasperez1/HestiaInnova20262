@@ -211,17 +211,35 @@ internal fun ReportDialog(
     initial: ReportForm, persona: CallPersona, onClose: () -> Unit, onSave: (String, CallReportCategory) -> Unit,
     fixed: Boolean = false, postCall: Boolean = false, contextLabel: String? = null,
     busy: Boolean = false, feedback: String? = null, submitLabel: String? = null,
+    confirmBeforeSend: Boolean = false, displayNumber: String = initial.number,
     afterCallActions: @Composable () -> Unit = {},
 ) {
     var input by rememberSaveable { mutableStateOf(initial.number) }
     var category by rememberSaveable { mutableStateOf(initial.category) }
+    var confirming by rememberSaveable { mutableStateOf(false) }
     val number = communityCallNumber(input)
     val editing = initial.category != null
+    val reason = category
+    if (confirming && number != null && reason != null) {
+        AlertDialog(
+            onDismissRequest = { confirming = false },
+            title = { Text("¿Enviar este reporte?") },
+            text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(displayNumber, style = MaterialTheme.typography.titleLarge)
+                Text(reason.label)
+                Text("Reportas un comportamiento observado. La identidad de quien llamó puede ser distinta de la asociada al número.")
+                Text("El reporte se guardará en DEMO LOCAL con la identidad de prueba ${persona.label}.")
+            } },
+            confirmButton = { TextButton({ confirming = false; onSave(number, reason) }, Modifier.heightIn(min = 48.dp)) { Text("Confirmar envío") } },
+            dismissButton = { TextButton({ confirming = false }, Modifier.heightIn(min = 48.dp)) { Text("Volver al motivo") } },
+        )
+        return
+    }
     AlertDialog(
         onDismissRequest = { if (!busy) onClose() },
         title = { Text(if (postCall) "¿Quieres reportar esta llamada?" else if (editing) "Corregir reporte" else "Reportar un número") },
         text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (fixed) Text(initial.number, style = MaterialTheme.typography.titleLarge)
+            if (fixed) Text(displayNumber, style = MaterialTheme.typography.titleLarge)
             else DemoNumberField(input, { input = it }, readOnly = editing)
             contextLabel?.let { Text(it) }
             afterCallActions()
@@ -237,14 +255,17 @@ internal fun ReportDialog(
                     }
                 }
             }
-            Text("Al enviar, autorizas guardar el número ficticio y la categoría con la identidad de prueba ${persona.label}.")
+            if (!confirmBeforeSend) Text("Al enviar, autorizas guardar el número ficticio y la categoría con la identidad de prueba ${persona.label}.")
         } },
         confirmButton = {
-            TextButton({ if (number != null) category?.let { onSave(number, it) } }, Modifier.heightIn(min = 48.dp),
+            TextButton({ if (number != null && reason != null) {
+                if (confirmBeforeSend) confirming = true else onSave(number, reason)
+            } }, Modifier.heightIn(min = 48.dp),
                 enabled = number != null && category != null && !busy) {
                 Text(when {
                     busy -> "Enviando…"
                     submitLabel != null -> submitLabel
+                    confirmBeforeSend -> "Revisar reporte"
                     fixed && !editing -> "Enviar reporte"
                     else -> "Guardar reporte"
                 })
@@ -267,7 +288,7 @@ internal fun reputationLabel(snapshot: DemoReputationSnapshot, number: String): 
     return when (snapshot.verdict(number).classification) {
         CallClassification.PENDING_CORROBORATION -> "Pendiente de corroboración · $count ${if (count == 1) "reporte de fraude" else "reportes de fraude"}"
         CallClassification.SUSPICIOUS -> "Sospechoso · $count reportes de fraude independientes"
-        CallClassification.NO_REPORTS -> if ((snapshot.counts[number] ?: 0) > 0) "Sin reportes de fraude" else "Sin reportes"
+        CallClassification.NO_REPORTS -> if ((snapshot.counts[number] ?: 0) > 0) "Sin reportes de fraude" else "Sin reportes conocidos"
     }
 }
 

@@ -19,10 +19,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import cl.grupo28.hestia.core.components.*
 import cl.grupo28.hestia.domain.EducationProgress
-import cl.grupo28.hestia.domain.HelpRequest
 import cl.grupo28.hestia.domain.LessonCheckpoint
 import cl.grupo28.hestia.domain.LessonStep
-import cl.grupo28.hestia.features.family.TrustHelpDialog
 
 @Composable
 internal fun EducationScreen(progress: EducationProgress, saving: Boolean, onModule: (String) -> Unit, onLesson: (String) -> Unit) {
@@ -84,7 +82,6 @@ internal fun EducationModuleScreen(module: EducationModule, progress: EducationP
 
 @Composable
 internal fun LessonScreen(
-    module: EducationModule,
     lesson: EducationLesson,
     checkpoint: LessonCheckpoint,
     saving: Boolean,
@@ -95,7 +92,6 @@ internal fun LessonScreen(
     onSource: (OfficialSource) -> Unit,
 ) {
     var finished by rememberSaveable(lesson.id) { mutableStateOf(false) }
-    var help by remember { mutableStateOf(false) }
     val step = checkpoint.step
 
     if (finished) {
@@ -127,9 +123,6 @@ internal fun LessonScreen(
                 LessonStep.ACTION -> {
                     HestiaCard(color = MaterialTheme.colorScheme.secondaryContainer) {
                         lesson.actions.forEach { Text(it, style = MaterialTheme.typography.bodyLarge) }
-                    }
-                    if (module.id == EducationContent.RESPONSE_MODULE) {
-                        SecondaryButton("Pedir ayuda a una persona de confianza", { help = true })
                     }
                     if (showDemoReport && lesson.id == EducationContent.REPORT_LESSON) {
                         Text("En DEMO LOCAL puedes reportar una llamada ficticia desde Teléfono, en Recientes → Ver opciones → Reportar número.",
@@ -169,7 +162,6 @@ internal fun LessonScreen(
             if (step == LessonStep.REMEMBER) LessonSources(lesson, onSource)
         }
     }
-    if (help) TrustHelpDialog(HelpRequest(), { help = false })
 }
 
 @Composable

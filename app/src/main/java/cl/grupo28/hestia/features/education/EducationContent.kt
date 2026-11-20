@@ -238,7 +238,7 @@ internal object EducationContent {
                 REPORT_LESSON, "Una advertencia y cómo pedir ayuda",
                 "Hestia mostró un aviso durante una llamada que te dejó con dudas. Quieres revisar lo ocurrido con alguien de confianza.",
                 listOf("El aviso señala un posible riesgo. La identidad de quien llama aún necesita verificación.", "Si te presionaron para actuar o te pidieron claves, puedes detenerte y buscar apoyo."),
-                listOf("Verifica con la institución por un canal que tú ya conozcas.", "Puedes usar Pedir ayuda para preparar un mensaje a una persona de confianza. Si corresponde denunciar, consulta el canal oficial."),
+                listOf("Verifica con la institución por un canal que tú ya conozcas.", "Si necesitas apoyo, habla con una persona de confianza. Si corresponde denunciar, consulta el canal oficial."),
                 EducationExercise(ExerciseKind.CHOOSE_ACTION, "¿Qué puedes hacer después de ver el aviso?", listOf(
                     ExerciseOption("apoyo", "Verificar por otro canal y pedir apoyo"),
                     ExerciseOption("seguro", "Dar por confirmada la estafa y reenviar el número a todos"),

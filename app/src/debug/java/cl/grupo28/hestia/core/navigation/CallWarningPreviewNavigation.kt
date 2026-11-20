@@ -24,7 +24,7 @@ internal fun returnToPhoneRecents(context: Context) {
 
 internal fun NavGraphBuilder.addPhoneDestination(calls: CallSetup, onPreview: () -> Unit, onLearnCalls: () -> Unit) {
     composable(PhoneRoute) { PhoneScreen(calls, onPreview, onLearnCalls) }
-    composable(RecentsRoute) { PhoneScreen(calls, onPreview, onLearnCalls, startsInRecents = true) }
+    composable(RecentsRoute) { PhoneScreen(calls, onPreview, onLearnCalls) }
 }
 
 internal fun NavGraphBuilder.addCallWarningPreview(onClose: () -> Unit) {

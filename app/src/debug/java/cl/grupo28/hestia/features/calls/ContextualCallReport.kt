@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import cl.grupo28.hestia.data.calls.CallPersona
+import cl.grupo28.hestia.data.calls.DemoCallReportRepository
 import cl.grupo28.hestia.data.calls.DemoCallReports
 import cl.grupo28.hestia.domain.automatic.AutomaticError
 import kotlinx.coroutines.CancellationException
@@ -21,10 +22,14 @@ internal fun ContextualCallReport(
     number: String, onClose: () -> Unit, postCall: Boolean = false, contextLabel: String? = null,
     onAnswered: (CallPersona) -> Unit = {},
     onSubmit: (() -> Unit)? = null,
+    onSavedClose: (() -> Unit)? = null,
+    confirmBeforeSend: Boolean = false,
+    displayNumber: String = number,
+    repository: DemoCallReportRepository? = null,
     afterCallActions: @Composable () -> Unit = {},
 ) {
     val context = LocalContext.current
-    val reports = remember(context) { DemoCallReports.from(context) }
+    val reports = repository ?: remember(context) { DemoCallReports.from(context) }
     val persona by reports.persona.collectAsState()
     val ownership by reports.ownership.collectAsState()
     val scope = rememberCoroutineScope()
@@ -35,16 +40,17 @@ internal fun ContextualCallReport(
 
     fun done() {
         onAnswered(persona)
-        onClose()
+        if (sent && onSavedClose != null) onSavedClose() else onClose()
     }
 
     // Local knowledge avoids opening a second editor. The server is the authority on duplicates.
-    if (sent || duplicate || ownership[persona]?.containsKey(number) == true) {
+    if (!busy && (sent || duplicate || ownership[persona]?.containsKey(number) == true)) {
         AlertDialog(
             onDismissRequest = ::done,
             title = { Text(if (sent) "Reporte enviado" else "Ya reportado por ti") },
             text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(if (sent) feedback ?: "Tu reporte se guardó en DEMO LOCAL."
+                    else if (confirmBeforeSend) "Puedes retirar tu reporte desde las opciones de esta llamada."
                     else "Puedes corregir o retirar tu reporte en Protección, en Mis reportes.")
                 afterCallActions()
             } },
@@ -72,11 +78,15 @@ internal fun ContextualCallReport(
                         if (error is AutomaticError && error.code == "CALL_REPORT_ALREADY_EXISTS") {
                             duplicate = true
                             onAnswered(author)
+                            try { reports.sync(author) }
+                            catch (cancelled: CancellationException) { throw cancelled }
+                            catch (_: Exception) { /* The server still confirmed an existing report. */ }
                         } else feedback = "No pudimos confirmar el envío. Revisa la conexión y vuelve a intentar."
                     } finally { busy = false }
                 }
             }
         }, fixed = true, postCall = postCall, contextLabel = contextLabel, busy = busy, feedback = feedback,
+        confirmBeforeSend = confirmBeforeSend, displayNumber = displayNumber,
         submitLabel = if (onSubmit != null) "Reportar y colgar" else null,
         afterCallActions = { if (!busy) afterCallActions() },
     )
